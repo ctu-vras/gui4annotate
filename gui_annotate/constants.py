@@ -3,6 +3,7 @@
 from gi.repository import Gdk
 from gui_annotate.vec import Vec2D
 
+
 class Constants:
     ZOOM_STEP = 1
     MIN_ZOOM = 1
@@ -24,4 +25,3 @@ class Constants:
     CURSOR_MOVE = Gdk.Cursor.new(Gdk.CursorType.FLEUR)
     CURSOR_DRAW = Gdk.Cursor.new(Gdk.CursorType.CROSSHAIR)
     CURSOR_DELETE = Gdk.Cursor.new(Gdk.CursorType.X_CURSOR)
-    

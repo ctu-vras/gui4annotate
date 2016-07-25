@@ -92,6 +92,10 @@ class Vec2D:
     def __hash__(self):
         return hash(self.x) + hash(self.y)
 
+    def __round__(self, n=None):
+        round(self.x, n)
+        round(self.y, n)
+
     @staticmethod
     def allmin(*args):
         x = [vec.x for vec in args]
