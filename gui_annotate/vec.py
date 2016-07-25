@@ -95,6 +95,7 @@ class Vec2D:
     def __round__(self, n=None):
         round(self.x, n)
         round(self.y, n)
+        return self
 
     @staticmethod
     def allmin(*args):
