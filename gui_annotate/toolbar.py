@@ -13,11 +13,11 @@ class GuiToolbar(Gtk.Toolbar):
     zoom = GObject.property(type = int, default = Constants.INIT_ZOOM, flags = GObject.PARAM_READWRITE)
     state = GObject.property(type = int, default = Constants.DEFAULT_STATE, flags = GObject.PARAM_READWRITE)
 
-    def __init__(self):
-        Gtk.Toolbar.__init__(self)
+    def __init__(self, *args, **kwargs):
+        Gtk.Toolbar.__init__(self, *args, **kwargs)
 
         self.filechooser = Gtk.FileChooserButton.new("Please choose a folder", Gtk.FileChooserAction.SELECT_FOLDER)
-        self.filechooser.connect('file-set', lambda widget: self.set_folder(widget.get_filename()))
+        self.filechooser.connect('file-set', lambda widget: self.set_property('folder', widget.get_filename()))
         self.filechooser_button = Gtk.ToolItem.new()
         self.filechooser_button.add(self.filechooser)
 

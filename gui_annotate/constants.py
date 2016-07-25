@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from gi.repository import Gdk
+from gi.repository import Gdk, Gtk
 from gui_annotate.vec import Vec2D
 
 
@@ -25,3 +25,16 @@ class Constants:
     CURSOR_MOVE = Gdk.Cursor.new(Gdk.CursorType.FLEUR)
     CURSOR_DRAW = Gdk.Cursor.new(Gdk.CursorType.CROSSHAIR)
     CURSOR_DELETE = Gdk.Cursor.new(Gdk.CursorType.X_CURSOR)
+
+    IMAGE_EXT = ['.png', '.jpg', '.jpeg', '.bmp']
+    DEFAULT_ANNOTATION = 'Default bug'
+
+    FILE = 0
+    FILE_ICON = 'image-x-generic'
+    FOLDER = 1
+    FOLDER_ICON = 'folder'
+    ROI = 2
+    ROI_ICON = 'gtk-index'
+
+    DEFAULT_TEXT_COLOR = Gdk.RGBA(0,0,0,0)
+    UNSAVED_TEXT_COLOR = Gdk.RGBA(1,0,0,0)
