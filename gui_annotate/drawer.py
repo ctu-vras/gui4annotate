@@ -116,6 +116,7 @@ class Drawer(Gtk.DrawingArea):
         self.current_im = self.tree.data['full_path']
         self.current_pb = GdkPixbuf.Pixbuf.new_from_file(self.current_im)
         self.pb_size = Vec2D(self.current_pb.get_width(), self.current_pb.get_height())
+        self.tree.data['size'] = self.pb_size
         self.set_zoom(None)
         self.current_areas = [area for area in tree.children if area.data['type'] == Constants.ROI]
         self.can_save = any([area.data['changed'] for area in self.current_areas])

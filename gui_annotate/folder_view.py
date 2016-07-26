@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import functools
 
-from gi.repository import Gtk, GObject, Gdk
-import os
+from gi.repository import Gtk, GObject, Gdk, GdkPixbuf
+import os, math
 from gui_annotate.vec import Vec2D
 from gui_annotate.constants import Constants
 
@@ -17,6 +17,10 @@ class SimpleTree:
 
 
 class FolderStore(Gtk.TreeStore):
+
+    can_save = GObject.property(type=bool, default=False, flags=GObject.PARAM_READWRITE)
+    can_save_all = GObject.property(type=bool, default=False, flags=GObject.PARAM_READWRITE)
+
     def __init__(self, *args, **kwargs):
         Gtk.TreeStore.__init__(self, *args, **kwargs)
 
@@ -63,11 +67,7 @@ class FolderStore(Gtk.TreeStore):
             parent.data['ROIS'] = len(tree.children)
             self.set_value(tree_iter, 0, tree)
             if change:
-                change_tree = tree
-                while change_tree is not None:
-                    self.set_value(change_tree.data['iter'], 2, Constants.UNSAVED_TEXT_COLOR)
-                    change_tree.data['changed'] = True
-                    change_tree = change_tree.parent
+                self.propagate_change(tree)
             return tree
 
     def delete_roi(self, roi):
@@ -76,24 +76,23 @@ class FolderStore(Gtk.TreeStore):
         self.remove(roi.data['iter'])
         self.set_value(parent.data['iter'], 5, '<b>' + str(len(parent.children)) + '</b>')
 
-        change_tree = parent
-        while change_tree is not None:
-            self.set_value(change_tree.data['iter'], 2, Constants.UNSAVED_TEXT_COLOR)
-            change_tree.data['changed'] = True
-            change_tree = change_tree.parent
+        self.propagate_change(parent)
 
-    def save_handler(self, w, save_all, parent):
+    def save_handler(self, save_all, parent):
         if save_all:
             self.save(self.roi_data)
-            w.can_save_all = False
-            parent.area.can_save = False
+            self.can_save_all = False
         else:
             self.save(parent.current_node)
             if not self.any_unsaved(self.roi_data):
-                w.can_save_all = False
-                parent.area.can_save = False
-        w.can_save = False
-        parent.area.can_save = False
+                self.can_save_all = False
+        self.can_save = False
+
+    def propagate_change(self, node):
+        while node is not None:
+            self.set_value(node.data['iter'], 2, Constants.UNSAVED_TEXT_COLOR)
+            node.data['changed'] = True
+            node = node.parent
 
     def save(self, node):
         if node.data['type'] == Constants.FOLDER:
@@ -131,6 +130,7 @@ class FolderStore(Gtk.TreeStore):
 class FolderView(Gtk.ScrolledWindow):
     folder = GObject.property(type=str, default=None, flags=GObject.PARAM_READWRITE)
     current_im_node = GObject.property(type=GObject.TYPE_PYOBJECT, flags=GObject.PARAM_READWRITE)
+    __gsignals__ = {'change-areas': (GObject.SIGNAL_RUN_FIRST, None, (bool,))}
 
     def __init__(self, *args, **kwargs):
         Gtk.ScrolledWindow.__init__(self, *args, **kwargs)
@@ -153,6 +153,8 @@ class FolderView(Gtk.ScrolledWindow):
         name_column.add_attribute(name, 'text', 4)
         name_column.add_attribute(name, 'editable', 1)
         name_column.add_attribute(name, 'foreground-rgba', 2)
+        name.column = Constants.ROI_NAME
+        name.connect('edited', self.edit_cell)
         self.tree_view.append_column(name_column)
 
         for i in range(5, 9):
@@ -162,6 +164,8 @@ class FolderView(Gtk.ScrolledWindow):
             roi_data_column.add_attribute(roi_data, 'markup', i)
             roi_data_column.add_attribute(roi_data, 'editable', 1)
             roi_data_column.add_attribute(roi_data, 'foreground-rgba', 2)
+            roi_data.column = Constants.ROI_POINTS[i-5]
+            roi_data.connect('edited', self.edit_cell)
             self.tree_view.append_column(roi_data_column)
 
         self.tree_view.set_headers_visible(False)
@@ -169,6 +173,7 @@ class FolderView(Gtk.ScrolledWindow):
         self.add(self.tree_view)
         self.set_size_request(500, 612)
         self.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        self.tree_view.set_property('activate-on-single-click', True)
 
     def set_folder(self, path, parent):
         all_files = sorted([os.path.join(path, f) for f in os.listdir(path)])
@@ -192,3 +197,61 @@ class FolderView(Gtk.ScrolledWindow):
                 self.tree_view.expand_row(path, False)
             else:
                 self.tree_view.collapse_row(path)
+        if node.data['type'] == Constants.ROI:
+            self.set_property('current_im_node', node.parent)
+
+    def edit_cell(self, cr, path, new_text):
+        row = self.data[path]
+        column = cr.column
+        node = row[0]
+        if column == Constants.ROI_NAME:
+            node.data['class'] = new_text
+            self.data.set_value(node.data['iter'], 4, new_text)
+            self.data.propagate_change(node)
+            self.data.can_save = True
+            self.data.can_save_all = True
+
+        if column in Constants.ROI_POINTS:
+            try:
+                new_f = float(new_text)
+
+                if math.isinf(new_f) or math.isnan(new_f):
+                    return
+                if new_f < 0:
+                    new_f = 0
+
+                if 'size' not in node.parent.data:
+                    pb = GdkPixbuf.Pixbuf.new_from_file(node.parent.data['full_path'])
+                    node.parent.data['size'] = Vec2D(pb.get_width(), pb.get_height())
+
+                if new_f > node.parent.data['size'].x and (column is Constants.ROI_RBX or column is Constants.ROI_LTX):
+                    new_f = node.parent.data['size'].x
+                if new_f > node.parent.data['size'].y and (column is Constants.ROI_RBY or column is Constants.ROI_LTY):
+                    new_f = node.parent.data['size'].y
+
+                if column is Constants.ROI_RBX:
+                    node.data['rb'].x = new_f
+                if column is Constants.ROI_RBY:
+                    node.data['rb'].y = new_f
+                if column is Constants.ROI_LTX:
+                    node.data['lt'].x = new_f
+                if column is Constants.ROI_LTY:
+                    node.data['lt'].y = new_f
+
+                lt = Vec2D.allmin(node.data['lt'], node.data['rb'])
+                rb = Vec2D.allmax(node.data['lt'], node.data['rb'])
+
+                node.data['lt'] = lt
+                node.data['rb'] = rb
+                roi_f = [lt.x, lt.y, rb.x, rb.y]
+                roi_s = list(map(lambda x: '%.1f' % x, roi_f))
+
+                self.data.set(node.data['iter'], [5, 6, 7, 8], roi_s)
+                self.data.can_save = True
+                self.data.can_save_all = True
+                self.emit('change-areas', True)
+                self.data.propagate_change(node)
+
+            except:
+                return
+

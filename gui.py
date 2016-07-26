@@ -29,7 +29,12 @@ class Gui4Annotate(Gtk.Window):
         self.toolbar.connect('notify::state', lambda w, _: self.area.set_state(w.state))
         self.toolbar.connect('notify::folder', lambda w, _: self.folder_view.set_property('folder', w.folder))
         self.toolbar.connect('notify::zoom', lambda w, _: self.area.set_zoom(w.zoom))
-        self.toolbar.connect('save', lambda w, save_all: self.folder_view.data.save_handler(w, save_all, self))
+        self.toolbar.connect('save', lambda w, save_all: self.folder_view.data.save_handler(save_all, self))
+
+        self.folder_view.data.connect('notify::can-save', lambda w, _: self.toolbar.set_property('can_save', w.can_save))
+        self.folder_view.data.connect('notify::can-save', lambda w, _: self.area.set_property('can_save', w.can_save))
+        self.folder_view.data.connect('notify::can-save-all', lambda w, _: self.toolbar.set_property('can_save_all', w.can_save_all))
+        self.folder_view.connect('change-areas', lambda w, _: self.area.update_areas())
 
         self.folder_view.connect('notify::current-im-node', lambda w, _: [None, self.area.set_image(w.current_im_node), self.set_property('current_node', w.current_im_node)][0])
         self.area.connect('append-roi', lambda _, parent, roi_data: self.append_roi(parent, roi_data))

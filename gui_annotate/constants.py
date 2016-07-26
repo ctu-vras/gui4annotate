@@ -41,3 +41,11 @@ class Constants:
 
 #tree_inst, editable, color, icon_name, short_path/class_name, x-lt/#of ROIS, y-lt, x-rb, y-rb
     FOLDER_VIEW_ROW = (GObject.TYPE_PYOBJECT, bool, Gdk.RGBA, str, str, str, str, str, str)
+
+    ROI_NAME = 0
+    ROI_LTX = 1
+    ROI_LTY = 2
+    ROI_RBX = 3
+    ROI_RBY = 4
+
+    ROI_POINTS = [ROI_LTX, ROI_LTY, ROI_RBX, ROI_RBY]
