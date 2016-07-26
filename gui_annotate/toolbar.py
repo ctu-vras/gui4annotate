@@ -6,9 +6,11 @@ from gui_annotate.constants import Constants
 
 class GuiToolbar(Gtk.Toolbar):
 
-    __gsignals__ = {'prev-im' : (GObject.SIGNAL_RUN_FIRST, None, (bool,)), 'next-im' : (GObject.SIGNAL_RUN_FIRST, None, (bool,)), 'save' : (GObject.SIGNAL_RUN_FIRST, None, (bool,))}
+    __gsignals__ = {'prev-im' : (GObject.SIGNAL_RUN_FIRST, None, (bool,)), 'next-im': (GObject.SIGNAL_RUN_FIRST, None, (bool,)), 'save': (GObject.SIGNAL_RUN_FIRST, None, (bool,))}
     can_save = GObject.property(type = bool, default = False, flags = GObject.PARAM_READWRITE)
     can_save_all = GObject.property(type=bool, default=False, flags=GObject.PARAM_READWRITE)
+    can_next = GObject.property(type=bool, default=False, flags=GObject.PARAM_READWRITE)
+    can_prev = GObject.property(type=bool, default=False, flags=GObject.PARAM_READWRITE)
     folder = GObject.property(type = str, default = None, flags = GObject.PARAM_READWRITE)
     zoom = GObject.property(type = int, default = Constants.INIT_ZOOM, flags = GObject.PARAM_READWRITE)
     state = GObject.property(type = int, default = Constants.DEFAULT_STATE, flags = GObject.PARAM_READWRITE)
@@ -24,18 +26,22 @@ class GuiToolbar(Gtk.Toolbar):
         self.save_button = Gtk.ToolButton.new(Gtk.Image.new_from_icon_name('gtk-save', Gtk.IconSize.LARGE_TOOLBAR), 'Save')
         self.save_button.connect('clicked', lambda _: self.emit('save', False))
         self.save_button.set_sensitive(False)
-        self.connect('notify::can_save', lambda w, _: self.save_button.set_sensitive(w.can_save))
+        self.connect('notify::can-save', lambda w, _: self.save_button.set_sensitive(w.can_save))
 
         self.save_all_button = Gtk.ToolButton.new(Gtk.Image.new_from_icon_name('gtk-save-as', Gtk.IconSize.LARGE_TOOLBAR), 'Save all')
         self.save_all_button.connect('clicked', lambda _:self.emit('save', True))
         self.save_all_button.set_sensitive(False)
-        self.connect('notify::can_save_all', lambda w, _: self.save_all_button.set_sensitive(w.can_save_all))
+        self.connect('notify::can-save-all', lambda w, _: self.save_all_button.set_sensitive(w.can_save_all))
 
         self.prev_button = Gtk.ToolButton.new(Gtk.Image.new_from_icon_name('go-previous', Gtk.IconSize.LARGE_TOOLBAR), None)
         self.prev_button.connect('clicked', lambda _: self.emit('prev-im', True))
+        self.prev_button.set_sensitive(False)
+        self.connect('notify::can-prev', lambda w, _: self.prev_button.set_sensitive(w.can_prev))
 
         self.next_button = Gtk.ToolButton.new(Gtk.Image.new_from_icon_name('go-next', Gtk.IconSize.LARGE_TOOLBAR), None)
         self.next_button.connect('clicked', lambda _: self.emit('next-im', True))
+        self.next_button.set_sensitive(False)
+        self.connect('notify::can-next', lambda w, _: self.next_button.set_sensitive(w.can_next))
 
         self.zoom_out_button = Gtk.ToolButton.new(Gtk.Image.new_from_icon_name('zoom-out', Gtk.IconSize.LARGE_TOOLBAR), None)
         self.zoom_out_button.connect('clicked', lambda _: self.set_zoom(self.zoom + Constants.ZOOM_STEP) if self.zoom + Constants.ZOOM_STEP <= Constants.MAX_ZOOM else None)

@@ -97,6 +97,9 @@ class Vec2D:
         round(self.y, n)
         return self
 
+    def __str__(self):
+        return '%.1f,%.1f' % (self.x, self.y)
+
     @staticmethod
     def allmin(*args):
         x = [vec.x for vec in args]

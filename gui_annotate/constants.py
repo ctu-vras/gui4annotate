@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from gi.repository import Gdk, Gtk
+from gi.repository import Gdk, GObject
 from gui_annotate.vec import Vec2D
 
 
@@ -38,3 +38,6 @@ class Constants:
 
     DEFAULT_TEXT_COLOR = Gdk.RGBA(0,0,0,0)
     UNSAVED_TEXT_COLOR = Gdk.RGBA(1,0,0,0)
+
+#tree_inst, editable, color, icon_name, short_path/class_name, x-lt/#of ROIS, y-lt, x-rb, y-rb
+    FOLDER_VIEW_ROW = (GObject.TYPE_PYOBJECT, bool, Gdk.RGBA, str, str, str, str, str, str)
