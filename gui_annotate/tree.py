@@ -31,13 +31,15 @@ class SimpleTreeNode:
             storage.app.can_save =True
         storage.app.can_save_all = True
         self.changed = True
-        storage.set_value(self.storage_handle, 2, Constants.UNSAVED_TEXT_COLOR)
+        if isinstance(self, ROINode) or isinstance(self, ImageNode) or isinstance(self,FolderNode):
+            storage.set_value(self.storage_handle, 2, Constants.UNSAVED_TEXT_COLOR)
         if self.parent is not None:
             self.parent.set_changed(storage)
 
     def set_saved(self, storage):
         self.changed = False
-        storage.set_value(self.storage_handle, 2, Constants.DEFAULT_TEXT_COLOR)
+        if isinstance(self, ROINode) or isinstance(self, ImageNode) or isinstance(self, FolderNode):
+            storage.set_value(self.storage_handle, 2, Constants.DEFAULT_TEXT_COLOR)
         if self.parent is not None and not self.parent.any_unsaved():
             self.parent.set_saved(storage)
 
@@ -61,7 +63,7 @@ class SimpleTreeNode:
         im_prev = -2
         im_next = 0
         for i, node in enumerate(node_list):
-            if i == image_indices[im_next]:
+            if im_next < im_num and i == image_indices[im_next]:
                 im_next += 1
                 im_prev += 1
             if im_prev < 0:
@@ -92,7 +94,7 @@ class FolderNode(SimpleTreeNode):
 
     def __init__(self, full_path, storage, parent=None):
         if parent is not None:
-            assert isinstance(parent, FolderNode)
+            assert isinstance(parent, FolderNode) or isinstance(parent, SimpleTreeNode)
         SimpleTreeNode.__init__(self, parent)
         self.type = Constants.FOLDER
         self.path = full_path
@@ -263,25 +265,24 @@ class TreeStorage(Gtk.TreeStore):
         Gtk.TreeStore.__init__(self, *args, **kwargs)
 
         self.app = app
-        self.tree_node = None
+        self.tree_node = SimpleTreeNode()
         self.app.connect('notify::folder', lambda w, _: self.set_folder(w.folder))
         self.app.connect('save', lambda _, save_all: self.save_handler(save_all))
         self.app.connect('remove-roi', lambda _, roi: roi.delete_node(self))
 
     def set_folder(self, folder):
-        self.tree_node = FolderNode.create_tree(folder, self)
+        input = FolderNode.create_tree(folder, self, parent=self.tree_node)
         self.tree_node.set_prev_and_next()
-        if self.tree_node.next:
-            next_path = self.get_path(self.tree_node.next.storage_handle)
-            view = self.app.folder_view.folder_view
-
-            view.expand_to_path(next_path)
-            view.row_activated(next_path, view.get_column(0))
-            view.set_cursor(next_path, None, False)
+        view = self.app.folder_view.folder_view
+        if input.next:
+            view.set_node(input.next)
+        elif self.tree_node.next:
+            view.set_node(self.tree_node.next)
 
     def save_handler(self, save_all):
         if save_all:
-            self.tree_node.save(self)
+            for child in self.tree_node.children:
+                child.save(self)
             self.app.can_save_all = False
         else:
             self.app.current_im_node.save(self)
@@ -305,12 +306,15 @@ class FolderView(Gtk.TreeView):
         self.set_headers_visible(False)
         self.setup_columns()
 
-    def follow_im(self, prev):
-        n_node = self.app.current_im_node.prev if prev else self.app.current_im_node.next
-        path = self.storage.get_path(n_node.storage_handle)
+    def set_node(self, node):
+        path = self.storage.get_path(node.storage_handle)
         self.expand_to_path(path)
         self.row_activated(path, self.get_column(0))
         self.set_cursor(path, None, False)
+
+    def follow_im(self, prev):
+        n_node = self.app.current_im_node.prev if prev else self.app.current_im_node.next
+        self.set_node(n_node)
 
     def append_roi(self, roi_str):
         node = ROINode(self.storage, self.app.current_im_node, roi_str=roi_str, changed=True)

@@ -89,7 +89,7 @@ class GuiToolbar(Gtk.Toolbar):
 
     def setup_fileop(self):
         filechooser = Gtk.FileChooserButton.new("Please choose a folder", Gtk.FileChooserAction.SELECT_FOLDER)
-        filechooser.connect('file-set', lambda w: self.app.set_property('folder', w.get_filename()))
+        filechooser.connect('file-set', lambda w: self.app.set_property('folder', w.get_filename()) if self.app.folder is not w.get_filename() else None)
         filechooser_button = Gtk.ToolItem.new()
         filechooser_button.add(filechooser)
 
