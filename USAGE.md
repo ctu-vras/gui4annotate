@@ -88,17 +88,17 @@ If some image has 0 annotations, empty file will **NOT** be created and if there
 
 None of the keyboard shortcuts work while editing values of annotations manually. Shortcuts work only if performed action is available through standard GUI
 
-+ <kbd>ctrl</kbd> + <kbd>s</kbd>
++ <kbd>Ctrl</kbd> + <kbd>s</kbd>
   + Save annotations for current image file
-+ <kbd>ctrl</kbd> + <kbd>shift</kbd> + <kbd>s</kbd>
++ <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>s</kbd>
   + Save annotations for all changed files
-+ <kbd>left</kbd>
++ <kbd>&larr;</kbd>
   + Previous image
-+ <kbd>right</kbd>
++ <kbd>&rarr;</kbd>
   + Next image
-+ <kbd>plus</kbd>
++ <kbd>+</kbd>
   + Zoom in
-+ <kbd>minus</kbd>
++ <kbd>-</kbd>
   + Zoom out
 + <kbd>m</kbd>
   + Moving mode
@@ -108,7 +108,7 @@ None of the keyboard shortcuts work while editing values of annotations manually
   + Removing mode
 + <kbd>a</kbd>
   + Creates new annotation in the current image with values `lt = rb = [0,0]` and annotation class is 'Default bug' to modify manually.
-+ <kbd>delete</kbd>
++ <kbd>Del</kbd>
   + If the current selection in folder view is annotation, deletes this annotation
   + If the current selection in folder view is image file, deletes **ALL** annotations for this image file
 + <kbd>c</kbd>
@@ -119,10 +119,10 @@ None of the keyboard shortcuts work while editing values of annotations manually
 #### Intended workflow for keyboard
 
 1. Load folder (only by GUI)
-2. Navigate to desired image by <kbd>left</kbd>/<kbd>right</kbd> arrows.
+2. Navigate to desired image by <kbd>&larr;</kbd>/<kbd>&rarr;</kbd> arrows.
 3. Create new annotation by <kbd>a</kbd>
-4. Change annotation value by <kbd>c</kbd> and <kbd>tab</kbd>
+4. Change annotation value by <kbd>c</kbd> and <kbd>Tab</kbd>
 5. Repeat steps 2-4
-6. Save all annotations by <kbd>ctrl</kbd> + <kbd>shift</kbd> + <kbd>s</kbd>
+6. Save all annotations by <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>s</kbd>
 
 
