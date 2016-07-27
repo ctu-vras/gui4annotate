@@ -10,7 +10,16 @@ from gui_annotate.folder_view import FolderView
 
 class Gui4Annotate(Gtk.Window):
 
-    current_node = GObject.property(type=GObject.TYPE_PYOBJECT, flags=GObject.PARAM_READWRITE)
+    current_im_node = GObject.property(type=GObject.TYPE_PYOBJECT, flags=GObject.PARAM_READWRITE)
+    zoom = GObject.property(type=int, default=Constants.INIT_ZOOM, flags=GObject.PARAM_READWRITE)
+    can_save = GObject.property(type=bool, default=False, flags=GObject.PARAM_READWRITE)
+    can_save_all = GObject.property(type=bool, default=False, flags=GObject.PARAM_READWRITE)
+    folder = GObject.property(type=str, default='', flags=GObject.PARAM_READWRITE)
+
+    __gsignals__ = {'save': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
+                    'change-areas': (GObject.SIGNAL_RUN_FIRST, None, (bool,))
+                    }
+
     def __init__(self):
         Gtk.Window.__init__(self, title='Gui for annotation')
         self.connect('delete-event', Gtk.main_quit)
