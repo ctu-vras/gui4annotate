@@ -12,7 +12,7 @@
 7. [Saving annotations](#save)
 8. [Keyboard shortcuts](#key)
 
-## Running the program <a href="#run"></a>
+## Running the program <a name="#run"></a>
 
 To be sure your system meets all the requirements, read file `INSTALL.md` first
 
@@ -24,7 +24,7 @@ To be sure your system meets all the requirements, read file `INSTALL.md` first
 
 The file `gui.py` itself is made executable, so you should be able to run file `gui.py` by regular double clicking. Don't worry if a console pops up when running on Windows - this happens normally.
 
-## Description of GUI <a href="#gui"></a>
+## Description of GUI <a name="#gui"></a>
 
 When you run the program, you will notice a toolbar with couple icons, and two big areas, that are directly after starting up blank.
 The toolbar consists of these controls (from left to right):
@@ -41,7 +41,7 @@ The toolbar consists of these controls (from left to right):
 
 The left area is for navigation through folders and right area is for viewing the image.
 
-## Navigating through folders and adding folders <a href="#folders"></a>
+## Navigating through folders and adding folders <a name="#folders"></a>
 
 When you choose a folder to load by Folder chooser button, a new directory structure will apper in left area. The directory structure contains all its subfolders, however, only image files are present as files. For each image for which there was found corresponding annotation file, the image is populated with all annotation data saved on computer. The bold number next to image filename is number of annotations.
 
@@ -49,7 +49,7 @@ Each annotation includes name of class (default name is 'Default bug') and 4 poi
 
 Left (right) button will select previous (next) image across folders
 
-## Image frame <a href="#image"></a>
+## Image frame <a name="#image"></a>
 
 When you select an image from folder view, it will load into image frame.
 
@@ -58,22 +58,22 @@ Image can be zoomed by zoom buttons or a scale bar.
 There are three modes of operation within image frame:
 
 + Moving 
-+ Adding annotations
++ Drawing annotations
 + Removing annotations
 
 Moving around the image can be done only when the image is zoomed enough. Adding and removing annotations is described in [next part](#anno)
 
-## Adding and removing annotations <a href="#anno"></a>
+## Adding and removing annotations <a name="#anno"></a>
 
 When the image frame is in adding mode, you can simply draw annotations whenever in the image you want. Note that however, you will not be able to draw outside of your viewport, which might be rather small with zoomed out image. Every drawn annotation will be given default tag which is 'Default bug'. This can be changed in file `gui_annotation.constants` in variable `Constants.DEFAULT_ANNOTATION` (*might have change in the future to a more user-friendly setting*)
 
 When the image frame is in removing mode, clicking anywhere inside anyannotation will remove the annotation. Note that when there are multiple overlapping annotation and the click occurs inside the overlapping region, **ALL** annotations will be removed.
 
-## Changing annotations <a href="#change-anno"></a>
+## Changing annotations <a name="#change-anno"></a>
 
 If the annotation is selected inside Folder view and double-clicked, every item in the annotation can be edited. Any string is allowed as annotation class, only numbers within the range (0, size_of_image) are allowed. Note that first two numbers in folder view **always** represent left-top corner and other two always represent right-bottom corner, so the values you have entered might have switch their position after edited
 
-## Saving annotations <a href="#save"></a>
+## Saving annotations <a name="#save"></a>
 
 The first saving button will save annotations for current image opened in Image view. Each annotation for a file is on one line, values on a line are separated by comma (`,`). First four values are describing left-top corner and right-bottom corner of annotation in order `lt.x,lt.y,rb.x,rb.y`. Last value is annotation class. Such a file is saved under same filename as image filename with image extension being replaced by extension `.txt`
 
@@ -83,8 +83,10 @@ Second saving button will save annotations for all changed files in folder view.
 
 If some image has 0 annotations, empty file will **NOT** be created and if there existed annotation file for such image file in the past, it will be deleted.
 
+All unsaved annotations and folders containing them will be shown red in folder view until they are saved.
 
-## Keyboard shortcuts <a href="#key"></a>
+
+## Keyboard shortcuts <a name="#key"></a>
 
 None of the keyboard shortcuts work while editing values of annotations manually. Shortcuts work only if performed action is available through standard GUI
 

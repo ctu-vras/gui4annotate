@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
-from gi.repository import Gtk, GObject, GdkPixbuf, Gdk
-from gui_annotate.drawer import Drawer
+from gi.repository import Gtk, GObject, Gdk
+
 from gui_annotate.constants import Constants
+from gui_annotate.drawer import Drawer
+from gui_annotate.keyboard import Keyboard
 from gui_annotate.toolbar import GuiToolbar
 from gui_annotate.tree import FolderScrolledView
-from gui_annotate.keyboard import Keyboard
 
 
 class Gui4Annotate(Gtk.Window):
@@ -18,15 +19,14 @@ class Gui4Annotate(Gtk.Window):
     can_next = GObject.property(type=bool, default=False, flags=GObject.PARAM_READWRITE)
     folder = GObject.property(type=str, default='', flags=GObject.PARAM_READWRITE)
     state = GObject.property(type=int, default=Constants.STATE_ADD, flags=GObject.PARAM_READWRITE)
-    editing_row = GObject.property(type=GObject.TYPE_PYOBJECT, flags=GObject.PARAM_READWRITE)
-    editing_col = GObject.property(type=int, default=-1, flags=GObject.PARAM_READWRITE)
 
     __gsignals__ = {'save': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
                     'change-areas': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
                     'append-roi': (GObject.SIGNAL_RUN_FIRST, None, (str,)),
                     'remove-roi': (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
                     'prev-im': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
-                    'next-im': (GObject.SIGNAL_RUN_FIRST, None, (bool,))
+                    'next-im': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
+                    'set-editing': (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT))
                     }
 
     def __init__(self):
@@ -45,6 +45,8 @@ class Gui4Annotate(Gtk.Window):
         self.grid.attach(self.area, 1,1,1,1)
         self.grid.attach(self.folder_view, 0,1,1,1)
         self.add(self.grid)
+
+        self.set_resizable(False)
 
     def setup(self, window):
         display = Gdk.Display.get_default()

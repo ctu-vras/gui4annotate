@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-from gi.repository import Gtk, GObject
+from gi.repository import Gtk
+
 from gui_annotate.constants import Constants
 
 
@@ -32,6 +33,7 @@ class GuiToolbar(Gtk.Toolbar):
         self.app.connect('notify::state', lambda w, _: set_state(w.state, move_button))
         move_item = Gtk.ToolItem.new()
         move_item.add(move_button)
+        move_item.set_tooltip_text('Mode MOVING')
 
         add_button = Gtk.RadioButton.new_from_widget(move_button)
         add_button.state = Constants.STATE_ADD
@@ -42,6 +44,7 @@ class GuiToolbar(Gtk.Toolbar):
         add_button.set_active(True)
         add_item = Gtk.ToolItem.new()
         add_item.add(add_button)
+        add_item.set_tooltip_text('Mode DRAWING')
 
         delete_button = Gtk.RadioButton.new_from_widget(move_button)
         delete_button.state = Constants.STATE_REMOVE
@@ -51,6 +54,7 @@ class GuiToolbar(Gtk.Toolbar):
         self.app.connect('notify::state', lambda w, _: set_state(w.state, delete_button))
         delete_item = Gtk.ToolItem.new()
         delete_item.add(delete_button)
+        delete_item.set_tooltip_text('Mode REMOVING')
 
         self.insert(delete_item, 0)
         self.insert(add_item, 0)
@@ -62,6 +66,7 @@ class GuiToolbar(Gtk.Toolbar):
         zoom_out_button.connect('clicked', lambda _: self.app.set_property('zoom', self.app.zoom + Constants.ZOOM_STEP) if self.app.zoom + Constants.ZOOM_STEP <= Constants.MAX_ZOOM else None)
         self.app.connect('notify::zoom', lambda w, _: zoom_out_button.set_sensitive(False) if w.zoom >= Constants.MAX_ZOOM else zoom_out_button.set_sensitive(True))
         zoom_out_button.set_sensitive(False)
+        zoom_out_button.set_tooltip_text('Zoom out')
 
         scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, Constants.MIN_ZOOM, Constants.MAX_ZOOM, Constants.ZOOM_STEP)
         scale.set_inverted(True)
@@ -81,6 +86,7 @@ class GuiToolbar(Gtk.Toolbar):
         zoom_in_button = Gtk.ToolButton.new(Constants.ZOOM_IN_ICON, None)
         zoom_in_button.connect('clicked', lambda _: self.app.set_property('zoom', self.app.zoom - Constants.ZOOM_STEP) if self.app.zoom - Constants.ZOOM_STEP >= Constants.MIN_ZOOM else None)
         self.app.connect('notify::zoom', lambda w, _: zoom_in_button.set_sensitive(False) if w.zoom <= Constants.MIN_ZOOM else zoom_in_button.set_sensitive(True))
+        zoom_in_button.set_tooltip_text('Zoom in')
 
         self.insert(zoom_in_button, 0)
         self.insert(scale_button, 0)
@@ -92,26 +98,31 @@ class GuiToolbar(Gtk.Toolbar):
         filechooser.connect('file-set', lambda w: self.app.set_property('folder', w.get_filename()) if self.app.folder is not w.get_filename() else None)
         filechooser_button = Gtk.ToolItem.new()
         filechooser_button.add(filechooser)
+        filechooser_button.set_tooltip_text('Choose a folder')
 
-        save_button = Gtk.ToolButton.new(Constants.SAVE_ICON, 'Save')
+        save_button = Gtk.ToolButton.new(Constants.SAVE_ICON, None)
         save_button.connect('clicked', lambda _: self.app.emit('save', False))
         save_button.set_sensitive(False)
         self.app.connect('notify::can-save', lambda w, _: save_button.set_sensitive(w.can_save))
+        save_button.set_tooltip_text('Save current file')
 
-        save_all_button = Gtk.ToolButton.new(Constants.SAVE_ALL_ICON, 'Save all')
+        save_all_button = Gtk.ToolButton.new(Constants.SAVE_ALL_ICON, None)
         save_all_button.connect('clicked', lambda _: self.app.emit('save', True))
         save_all_button.set_sensitive(False)
         self.app.connect('notify::can-save-all', lambda w, _: save_all_button.set_sensitive(w.can_save_all))
+        save_all_button.set_tooltip_text('Save all changes')
 
         prev_button = Gtk.ToolButton.new(Constants.PREV_ICON, None)
         prev_button.connect('clicked', lambda _: self.app.emit('prev-im', True))
         prev_button.set_sensitive(False)
         self.app.connect('notify::can-prev', lambda w, _: prev_button.set_sensitive(w.can_prev))
+        prev_button.set_tooltip_text('Previous image')
 
         next_button = Gtk.ToolButton.new(Constants.NEXT_ICON, None)
         next_button.connect('clicked', lambda _: self.app.emit('next-im', True))
         next_button.set_sensitive(False)
         self.app.connect('notify::can-next', lambda w, _: next_button.set_sensitive(w.can_next))
+        next_button.set_tooltip_text('Next image')
 
         self.insert(next_button, 0)
         self.insert(prev_button, 0)

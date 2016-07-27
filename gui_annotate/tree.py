@@ -3,7 +3,9 @@ import functools
 import math
 import os
 from abc import abstractmethod
+
 from gi.repository import GdkPixbuf, Gtk
+
 from gui_annotate.constants import Constants
 from gui_annotate.vec import Vec2D
 
@@ -198,6 +200,8 @@ class ROINode(SimpleTreeNode):
         self.parent.children.remove(self)
         storage.set_value(self.parent.storage_handle, 5, '<b>' + str(self.parent.rois) + '</b>')
         self.parent.set_changed(storage)
+        view = storage.app.folder_view.folder_view
+        view.set_focused_node(self.parent)
 
     def update_cls(self, cls, storage):
         if cls == self.cls:
@@ -275,9 +279,9 @@ class TreeStorage(Gtk.TreeStore):
         self.tree_node.set_prev_and_next()
         view = self.app.folder_view.folder_view
         if input.next:
-            view.set_node(input.next)
+            view.set_focused_node(input.next)
         elif self.tree_node.next:
-            view.set_node(self.tree_node.next)
+            view.set_focused_node(self.tree_node.next)
 
     def save_handler(self, save_all):
         if save_all:
@@ -306,7 +310,7 @@ class FolderView(Gtk.TreeView):
         self.set_headers_visible(False)
         self.setup_columns()
 
-    def set_node(self, node):
+    def set_focused_node(self, node):
         path = self.storage.get_path(node.storage_handle)
         self.expand_to_path(path)
         self.row_activated(path, self.get_column(0))
@@ -314,12 +318,11 @@ class FolderView(Gtk.TreeView):
 
     def follow_im(self, prev):
         n_node = self.app.current_im_node.prev if prev else self.app.current_im_node.next
-        self.set_node(n_node)
+        self.set_focused_node(n_node)
 
     def append_roi(self, roi_str):
         node = ROINode(self.storage, self.app.current_im_node, roi_str=roi_str, changed=True)
-        parent_path = self.storage.get_path(node.parent.storage_handle)
-        self.expand_row(parent_path, False)
+        self.set_focused_node(node)
 
     def setup_columns(self):
         icon_renderer = Gtk.CellRendererPixbuf.new()
@@ -372,14 +375,15 @@ class FolderView(Gtk.TreeView):
         if node.type == Constants.ROI:
             self.app.current_im_node = node.parent
 
-    def start_edit(self, cr, _, path):
-        node = self.storage[path][0]
-        self.app.editing_row = node
-        self.app.editing_col = cr.column + 1
+    def start_edit(self, cr, editable, path):
+        self.app.keyboard.editable = editable
+        self.app.keyboard.editing_row = Gtk.TreePath.new_from_string(path)
+        self.app.keyboard.editing_col = cr.column + 1
 
     def stop_edit(self, _):
-        self.app.editing_row = None
-        self.app.editing_col = -1
+        self.app.keyboard.editing_row = None
+        self.app.keyboard.editing_col = -1
+        self.app.keyboard.editable = None
 
     def edit_cell(self, cr, path, new_text):
         node = self.storage[path][0]
