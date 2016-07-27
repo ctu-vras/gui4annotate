@@ -8,6 +8,8 @@ You can get Python3 for Windows at https://www.python.org/downloads/windows/
 For Windows, GObject Introspection library (Python bindings) can be obtained at https://sourceforge.net/projects/pygobjectwin32/files/
 You want to download the file named `pygi-aio-<version>-setup.exe`. Minimal required version is 3.18. This installer has all you need for running GTK based apps written in Python (any version up to 3.4) on Windows. This app needs to have installed packages GObject, GTK+, GDK, GdkPixbuf and Cairo.
 
+Mac OSX users, install py-gobject3 (via mac-ports or homebrew), see http://macappstore.org/pygobject3/ and https://wiki.gnome.org/action/show/Projects/PyGObject for more details
+
 Don't forget you need to install Python before installing PyGI.
 
 Then just run a script `gui.py`
