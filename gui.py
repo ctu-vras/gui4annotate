@@ -5,6 +5,7 @@ from gui_annotate.drawer import Drawer
 from gui_annotate.constants import Constants
 from gui_annotate.toolbar import GuiToolbar
 from gui_annotate.tree import FolderScrolledView
+from gui_annotate.keyboard import Keyboard
 
 
 class Gui4Annotate(Gtk.Window):
@@ -17,6 +18,8 @@ class Gui4Annotate(Gtk.Window):
     can_next = GObject.property(type=bool, default=False, flags=GObject.PARAM_READWRITE)
     folder = GObject.property(type=str, default='', flags=GObject.PARAM_READWRITE)
     state = GObject.property(type=int, default=Constants.STATE_ADD, flags=GObject.PARAM_READWRITE)
+    editing_row = GObject.property(type=GObject.TYPE_PYOBJECT, flags=GObject.PARAM_READWRITE)
+    editing_col = GObject.property(type=int, default=-1, flags=GObject.PARAM_READWRITE)
 
     __gsignals__ = {'save': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
                     'change-areas': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
@@ -29,7 +32,9 @@ class Gui4Annotate(Gtk.Window):
     def __init__(self):
         Gtk.Window.__init__(self, title='Gui for annotation')
         self.connect('delete-event', Gtk.main_quit)
+        self.connect('realize', self.setup)
 
+        self.keyboard = None
         self.grid = Gtk.Grid()
 
         self.toolbar = GuiToolbar(self)
@@ -40,6 +45,16 @@ class Gui4Annotate(Gtk.Window):
         self.grid.attach(self.area, 1,1,1,1)
         self.grid.attach(self.folder_view, 0,1,1,1)
         self.add(self.grid)
+
+    def setup(self, window):
+        display = Gdk.Display.get_default()
+        try:
+            Constants.CURSOR_DELETE = Gdk.Cursor.new_from_name(display, 'not-allowed')
+        except TypeError:
+            Constants.CURSOR_DELETE = Gdk.Cursor.new_for_display(display, Gdk.CursorType.X_CURSOR)
+        Constants.CURSOR_DRAW = Gdk.Cursor.new_for_display(display, Gdk.CursorType.CROSSHAIR)
+        Constants.CURSOR_MOVE = Gdk.Cursor.new_for_display(display, Gdk.CursorType.FLEUR)
+        self.keyboard = Keyboard(app)
 
 
 if __name__ == '__main__':

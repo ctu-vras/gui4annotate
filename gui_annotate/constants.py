@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from gi.repository import Gdk, GObject
+from gi.repository import Gdk, GObject, Gtk
 from gui_annotate.vec import Vec2D
 
 
@@ -22,9 +22,9 @@ class Constants:
     
     DEFAULT_STATE = STATE_ADD
 
-    CURSOR_MOVE = Gdk.Cursor.new(Gdk.CursorType.FLEUR)
-    CURSOR_DRAW = Gdk.Cursor.new(Gdk.CursorType.CROSSHAIR)
-    CURSOR_DELETE = Gdk.Cursor.new(Gdk.CursorType.X_CURSOR)
+    CURSOR_MOVE = None
+    CURSOR_DRAW = None
+    CURSOR_DELETE = None
 
     IMAGE_EXT = ['.png', '.jpg', '.jpeg', '.bmp']
     DEFAULT_ANNOTATION = 'Default bug'
@@ -35,6 +35,16 @@ class Constants:
     FOLDER_ICON = 'folder'
     ROI = 2
     ROI_ICON = 'gtk-index'
+
+    ZOOM_OUT_ICON = Gtk.Image.new_from_icon_name('zoom-out', Gtk.IconSize.LARGE_TOOLBAR)
+    ZOOM_IN_ICON = Gtk.Image.new_from_icon_name('zoom-in', Gtk.IconSize.LARGE_TOOLBAR)
+    DELETE_ICON = Gtk.Image.new_from_stock('gtk-delete', Gtk.IconSize.LARGE_TOOLBAR)
+    ADD_ICON = Gtk.Image.new_from_stock('gtk-add', Gtk.IconSize.LARGE_TOOLBAR)
+    MOVE_ICON = Gtk.Image.new_from_stock('gtk-fullscreen', Gtk.IconSize.LARGE_TOOLBAR)
+    SAVE_ICON = Gtk.Image.new_from_icon_name('gtk-save', Gtk.IconSize.LARGE_TOOLBAR)
+    SAVE_ALL_ICON = Gtk.Image.new_from_icon_name('gtk-save-as', Gtk.IconSize.LARGE_TOOLBAR)
+    PREV_ICON = Gtk.Image.new_from_icon_name('go-previous', Gtk.IconSize.LARGE_TOOLBAR)
+    NEXT_ICON = Gtk.Image.new_from_icon_name('go-next', Gtk.IconSize.LARGE_TOOLBAR)
 
     DEFAULT_TEXT_COLOR = Gdk.RGBA(0,0,0,0)
     UNSAVED_TEXT_COLOR = Gdk.RGBA(1,0,0,0)

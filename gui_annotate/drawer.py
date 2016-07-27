@@ -27,6 +27,7 @@ class Drawer(Gtk.DrawingArea):
         self.pad = Constants.PADDING
 
         self.win_size = self.vp_size + self.pad * 2
+        self.over = False
 
         self.set_size_request(self.win_size.x, self.win_size.y)
         self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
@@ -42,7 +43,9 @@ class Drawer(Gtk.DrawingArea):
         self.connect('draw', self.draw)
         self.app.connect('notify::zoom', lambda w, _: self.set_zoom(w.zoom))
         self.app.connect('notify::current-im-node', lambda w, _: self.set_image(w.current_im_node))
+        self.app.connect('notify::state', lambda w, _: self.change_cursor(self.over))
         self.app.connect('change-areas', lambda _, change: self.queue_draw())
+        self.app.connect('remove-roi', self.removed_roi)
 
     def draw(self, _, ctx):
         if self.current_surface:
@@ -162,12 +165,10 @@ class Drawer(Gtk.DrawingArea):
             for rm_roi in rm:
                 self.app.emit('remove-roi', rm_roi)
 
-            if len(rm):
-                rm_list = [roi.lt for roi in rm] + [roi.rb for roi in rm]
-                min_vec = self.transform_pb_to_vp(Vec2D.allmin(*rm_list))
-                max_vec = self.transform_pb_to_vp(Vec2D.allmax(*rm_list)) - min_vec + self.pad * 2
-
-                self.queue_draw_area(min_vec.x, min_vec.y, max_vec.x, max_vec.y)
+    def removed_roi(self, _, roi):
+        lt = self.transform_pb_to_vp(roi.lt)
+        rb = self.transform_pb_to_vp(roi.rb) - lt + self.pad * 2
+        self.queue_draw_area(lt.x, lt.y, rb.x, rb.y)
 
     def button_motion(self, _, event):
         if self.app.current_im_node:
@@ -189,6 +190,7 @@ class Drawer(Gtk.DrawingArea):
                 self.draw_area = None
 
     def change_cursor(self, enter):
+        self.over = enter
         cursor = None
         if enter:
             if self.app.state == Constants.STATE_MOVE:

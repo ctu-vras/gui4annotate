@@ -18,6 +18,8 @@ class SimpleTreeNode:
         self.type = -1
         self.changed = False
         self.storage_handle = None
+        self.next = None
+        self.prev = None
 
     def any_unsaved(self):
         return any([child.changed for child in self.children])
@@ -25,6 +27,8 @@ class SimpleTreeNode:
     def set_changed(self, storage):
         if isinstance(self, ROINode) and self.parent == storage.app.current_im_node:
             storage.app.can_save = True
+        if isinstance(self, ImageNode) and self == storage.app.current_im_node:
+            storage.app.can_save =True
         storage.app.can_save_all = True
         self.changed = True
         storage.set_value(self.storage_handle, 2, Constants.UNSAVED_TEXT_COLOR)
@@ -44,6 +48,30 @@ class SimpleTreeNode:
     @abstractmethod
     def insert_to_storage(self, storage):
         pass
+
+    def node_list(self):
+        if len(self.children) == 0:
+            return [self]
+        return functools.reduce(lambda x, y: x + y.node_list(), self.children, [self])
+
+    def set_prev_and_next(self):
+        node_list = self.node_list()
+        image_indices = list(map(lambda x: node_list.index(x), [node for node in node_list if isinstance(node, ImageNode)]))
+        im_num = len(image_indices)
+        im_prev = -2
+        im_next = 0
+        for i, node in enumerate(node_list):
+            if i == image_indices[im_next]:
+                im_next += 1
+                im_prev += 1
+            if im_prev < 0:
+                node.prev = None
+            else:
+                node.prev = node_list[image_indices[im_prev]]
+            if im_next >= im_num:
+                node.next = None
+            else:
+                node.next = node_list[image_indices[im_next]]
 
 
 class FolderNode(SimpleTreeNode):
@@ -151,6 +179,8 @@ class ROINode(SimpleTreeNode):
         self.insert_to_storage(storage)
         if changed:
             self.set_changed(storage)
+            self.prev = self.parent.prev
+            self.next = self.parent.next
 
     def insert_to_storage(self, storage):
         data = (self, True, Constants.DEFAULT_TEXT_COLOR, Constants.ROI_ICON, self.cls,
@@ -240,6 +270,14 @@ class TreeStorage(Gtk.TreeStore):
 
     def set_folder(self, folder):
         self.tree_node = FolderNode.create_tree(folder, self)
+        self.tree_node.set_prev_and_next()
+        if self.tree_node.next:
+            next_path = self.get_path(self.tree_node.next.storage_handle)
+            view = self.app.folder_view.folder_view
+
+            view.expand_to_path(next_path)
+            view.row_activated(next_path, view.get_column(0))
+            view.set_cursor(next_path, None, False)
 
     def save_handler(self, save_all):
         if save_all:
@@ -261,9 +299,18 @@ class FolderView(Gtk.TreeView):
         self.set_model(self.storage)
         self.app.connect('append-roi', lambda _, roi_str: self.append_roi(roi_str))
         self.connect('row-activated', self.activated_row)
+        self.app.connect('prev-im', lambda w, _: self.follow_im(True))
+        self.app.connect('next-im', lambda w, _: self.follow_im(False))
         self.set_property('activate-on-single-click', True)
         self.set_headers_visible(False)
         self.setup_columns()
+
+    def follow_im(self, prev):
+        n_node = self.app.current_im_node.prev if prev else self.app.current_im_node.next
+        path = self.storage.get_path(n_node.storage_handle)
+        self.expand_to_path(path)
+        self.row_activated(path, self.get_column(0))
+        self.set_cursor(path, None, False)
 
     def append_roi(self, roi_str):
         node = ROINode(self.storage, self.app.current_im_node, roi_str=roi_str, changed=True)
@@ -285,6 +332,8 @@ class FolderView(Gtk.TreeView):
         name_column.add_attribute(name_renderer, 'foreground-rgba', 2)
         name_renderer.column = Constants.ROI_NAME
         name_renderer.connect('edited', self.edit_cell)
+        name_renderer.connect('editing-started', self.start_edit)
+        name_renderer.connect('editing-canceled', self.stop_edit)
         self.append_column(name_column)
 
         for i in range(0, 4):
@@ -296,6 +345,8 @@ class FolderView(Gtk.TreeView):
             roi_column.add_attribute(roi_renderer, 'foreground-rgba', 2)
             roi_renderer.column = Constants.ROI_POINTS[i]
             roi_renderer.connect('edited', self.edit_cell)
+            roi_renderer.connect('editing-started', self.start_edit)
+            roi_renderer.connect('editing-canceled', self.stop_edit)
             self.append_column(roi_column)
 
     def activated_row(self, tree, path, _):
@@ -306,17 +357,29 @@ class FolderView(Gtk.TreeView):
                 self.expand_row(path, False)
             else:
                 self.collapse_row(path)
+            return
+        self.app.can_prev = True if node.prev is not None else False
+        self.app.can_next = True if node.next is not None else False
 
         if node.type == Constants.FILE:
             self.app.current_im_node = node
-            self.expand_row(path, False)
+            self.expand_row(path, True)
 
         if node.type == Constants.ROI:
             self.app.current_im_node = node.parent
 
+    def start_edit(self, cr, _, path):
+        node = self.storage[path][0]
+        self.app.editing_row = node
+        self.app.editing_col = cr.column + 1
+
+    def stop_edit(self, _):
+        self.app.editing_row = None
+        self.app.editing_col = -1
+
     def edit_cell(self, cr, path, new_text):
         node = self.storage[path][0]
-
+        self.stop_edit(True)
         if cr.column == Constants.ROI_NAME:
             node.update_cls(new_text, self.storage)
         else:
