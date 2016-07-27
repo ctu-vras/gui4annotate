@@ -3,9 +3,8 @@
 from gi.repository import Gtk, GObject, GdkPixbuf, Gdk
 from gui_annotate.drawer import Drawer
 from gui_annotate.constants import Constants
-from gui_annotate.vec import Vec2D
 from gui_annotate.toolbar import GuiToolbar
-from gui_annotate.folder_view import FolderView
+from gui_annotate.tree import FolderScrolledView
 
 
 class Gui4Annotate(Gtk.Window):
@@ -14,10 +13,17 @@ class Gui4Annotate(Gtk.Window):
     zoom = GObject.property(type=int, default=Constants.INIT_ZOOM, flags=GObject.PARAM_READWRITE)
     can_save = GObject.property(type=bool, default=False, flags=GObject.PARAM_READWRITE)
     can_save_all = GObject.property(type=bool, default=False, flags=GObject.PARAM_READWRITE)
+    can_prev = GObject.property(type=bool, default=False, flags=GObject.PARAM_READWRITE)
+    can_next = GObject.property(type=bool, default=False, flags=GObject.PARAM_READWRITE)
     folder = GObject.property(type=str, default='', flags=GObject.PARAM_READWRITE)
+    state = GObject.property(type=int, default=Constants.STATE_ADD, flags=GObject.PARAM_READWRITE)
 
     __gsignals__ = {'save': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
-                    'change-areas': (GObject.SIGNAL_RUN_FIRST, None, (bool,))
+                    'change-areas': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
+                    'append-roi': (GObject.SIGNAL_RUN_FIRST, None, (str,)),
+                    'remove-roi': (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
+                    'prev-im': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
+                    'next-im': (GObject.SIGNAL_RUN_FIRST, None, (bool,))
                     }
 
     def __init__(self):
@@ -26,34 +32,14 @@ class Gui4Annotate(Gtk.Window):
 
         self.grid = Gtk.Grid()
 
-        self.toolbar = GuiToolbar()
-        self.area = Drawer()
-        self.folder_view = FolderView()
+        self.toolbar = GuiToolbar(self)
+        self.area = Drawer(self)
+        self.folder_view = FolderScrolledView(self)
 
         self.grid.attach(self.toolbar, 0,0,2,1)
         self.grid.attach(self.area, 1,1,1,1)
         self.grid.attach(self.folder_view, 0,1,1,1)
         self.add(self.grid)
-
-        self.toolbar.connect('notify::state', lambda w, _: self.area.set_state(w.state))
-        self.toolbar.connect('notify::folder', lambda w, _: self.folder_view.set_property('folder', w.folder))
-        self.toolbar.connect('notify::zoom', lambda w, _: self.area.set_zoom(w.zoom))
-        self.toolbar.connect('save', lambda w, save_all: self.folder_view.data.save_handler(save_all, self))
-
-        self.folder_view.data.connect('notify::can-save', lambda w, _: self.toolbar.set_property('can_save', w.can_save))
-        self.folder_view.data.connect('notify::can-save', lambda w, _: self.area.set_property('can_save', w.can_save))
-        self.folder_view.data.connect('notify::can-save-all', lambda w, _: self.toolbar.set_property('can_save_all', w.can_save_all))
-        self.folder_view.connect('change-areas', lambda w, _: self.area.update_areas())
-
-        self.folder_view.connect('notify::current-im-node', lambda w, _: [None, self.area.set_image(w.current_im_node), self.set_property('current_node', w.current_im_node)][0])
-        self.area.connect('append-roi', lambda _, parent, roi_data: self.append_roi(parent, roi_data))
-        self.area.connect('remove-roi', lambda _, roi: self.folder_view.data.delete_roi(roi))
-        self.area.connect('notify::can-save', lambda w, _: [None, self.toolbar.set_property('can_save', w.can_save), self.toolbar.set_property('can_save_all', True) if w.can_save else None][0])
-
-    def append_roi(self, parent, roi_data):
-        self.folder_view.data.append_custom(Constants.ROI, parent=parent, roi_data=roi_data, change=True)
-        self.area.update_areas()
-        self.folder_view.tree_view.expand_row(self.folder_view.data.get_path(parent.data['iter']), False)
 
 
 if __name__ == '__main__':

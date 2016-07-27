@@ -23,6 +23,9 @@ class SimpleTreeNode:
         return any([child.changed for child in self.children])
 
     def set_changed(self, storage):
+        if isinstance(self, ROINode) and self.parent == storage.app.current_im_node:
+            storage.app.can_save = True
+        storage.app.can_save_all = True
         self.changed = True
         storage.set_value(self.storage_handle, 2, Constants.UNSAVED_TEXT_COLOR)
         if self.parent is not None:
@@ -70,7 +73,7 @@ class FolderNode(SimpleTreeNode):
     def insert_to_storage(self, storage):
         name = os.path.split(self.path)[1]
         data = (self, False, Constants.DEFAULT_TEXT_COLOR, Constants.FOLDER_ICON, name, '', '', '', '')
-        self.storage_handle = storage.append(self.parent if self.parent is not None else None, data)
+        self.storage_handle = storage.append(self.parent.storage_handle if self.parent is not None else None, data)
 
     def save(self, storage):
         if self.changed:
@@ -105,7 +108,7 @@ class ImageNode(SimpleTreeNode):
         name = os.path.split(self.path)[1]
         data = (self, False, Constants.DEFAULT_TEXT_COLOR, Constants.FILE_ICON, name,
                 '<b>' + str(self.rois) + '</b>', '', '', '')
-        self.storage_handle = storage.append(self.parent, data)
+        self.storage_handle = storage.append(self.parent.storage_handle, data)
 
     def save(self, storage):
         if self.changed:
@@ -115,7 +118,8 @@ class ImageNode(SimpleTreeNode):
                 with open(txt_path, mode='w') as f:
                     f.write(data)
             else:
-                os.remove(txt_path)
+                if os.path.isfile(txt_path):
+                    os.remove(txt_path)
             self.set_saved(storage)
             for child in self.children:
                 child.set_saved(storage)
@@ -151,7 +155,7 @@ class ROINode(SimpleTreeNode):
     def insert_to_storage(self, storage):
         data = (self, True, Constants.DEFAULT_TEXT_COLOR, Constants.ROI_ICON, self.cls,
                 '%.1f' % self.lt.x, '%.1f' % self.lt.y, '%.1f' % self.rb.x, '%.1f' % self.rb.y)
-        self.storage_handle = (self.parent, data)
+        self.storage_handle = storage.append(self.parent.storage_handle, data)
 
     def save(self, storage):
         pass
@@ -159,21 +163,15 @@ class ROINode(SimpleTreeNode):
     def delete_node(self, storage):
         storage.remove(self.storage_handle)
         self.parent.rois -= 1
+        self.parent.children.remove(self)
         storage.set_value(self.parent.storage_handle, 5, '<b>' + str(self.parent.rois) + '</b>')
         self.parent.set_changed(storage)
-        storage.app.can_save_all = True
-        if self.parent == storage.app.current_im_node:
-            storage.app.can_save = True
-        del self
 
     def update_cls(self, cls, storage):
         if cls == self.cls:
             return
         self.cls = cls
         storage.set_value(self.storage_handle, 4, self.cls)
-        storage.app.can_save_all = True
-        if self.parent == storage.app.current_im_node:
-            storage.app.can_save = True
         self.set_changed(storage)
 
     def update_bbox(self, column, data, storage):
@@ -224,9 +222,6 @@ class ROINode(SimpleTreeNode):
 
         storage.set(self.storage_handle, [5, 6, 7, 8], roi_s)
         storage.app.emit('change-areas', True)
-        storage.app.can_save_all = True
-        if self.parent == storage.app.current_im_node:
-            storage.app.can_save = True
         self.set_changed(storage)
 
     def __str__(self):
@@ -241,6 +236,7 @@ class TreeStorage(Gtk.TreeStore):
         self.tree_node = None
         self.app.connect('notify::folder', lambda w, _: self.set_folder(w.folder))
         self.app.connect('save', lambda _, save_all: self.save_handler(save_all))
+        self.app.connect('remove-roi', lambda _, roi: roi.delete_node(self))
 
     def set_folder(self, folder):
         self.tree_node = FolderNode.create_tree(folder, self)
@@ -263,10 +259,16 @@ class FolderView(Gtk.TreeView):
         self.app = app
         self.storage = TreeStorage(self.app, *Constants.FOLDER_VIEW_ROW)
         self.set_model(self.storage)
+        self.app.connect('append-roi', lambda _, roi_str: self.append_roi(roi_str))
         self.connect('row-activated', self.activated_row)
         self.set_property('activate-on-single-click', True)
         self.set_headers_visible(False)
         self.setup_columns()
+
+    def append_roi(self, roi_str):
+        node = ROINode(self.storage, self.app.current_im_node, roi_str=roi_str, changed=True)
+        parent_path = self.storage.get_path(node.parent.storage_handle)
+        self.expand_row(parent_path, False)
 
     def setup_columns(self):
         icon_renderer = Gtk.CellRendererPixbuf.new()
@@ -290,7 +292,7 @@ class FolderView(Gtk.TreeView):
             roi_column = Gtk.TreeViewColumn.new()
             roi_column.pack_start(roi_renderer, True)
             roi_column.add_attribute(roi_renderer, 'markup', i+5)
-            roi_column.add_attribute(roi_renderer, 'edit   able', 1)
+            roi_column.add_attribute(roi_renderer, 'editable', 1)
             roi_column.add_attribute(roi_renderer, 'foreground-rgba', 2)
             roi_renderer.column = Constants.ROI_POINTS[i]
             roi_renderer.connect('edited', self.edit_cell)
@@ -303,7 +305,7 @@ class FolderView(Gtk.TreeView):
             if not self.row_expanded(path):
                 self.expand_row(path, False)
             else:
-                self.collapse_row(path, False)
+                self.collapse_row(path)
 
         if node.type == Constants.FILE:
             self.app.current_im_node = node

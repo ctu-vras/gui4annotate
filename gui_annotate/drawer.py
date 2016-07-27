@@ -3,27 +3,17 @@
 from gi.repository import Gtk, Gdk, GdkPixbuf, GObject
 from gui_annotate.vec import Vec2D
 from gui_annotate.constants import Constants
-from gui_annotate.folder_view import SimpleTree
 
 
 class Drawer(Gtk.DrawingArea):
-    state = GObject.property(type=int, default=Constants.DEFAULT_STATE, flags=GObject.PARAM_READWRITE)
-    current_im = GObject.property(type=str, default=None, flags=GObject.PARAM_READWRITE)
-    zoom = GObject.property(type=int, default=Constants.INIT_ZOOM, flags=GObject.PARAM_READWRITE)
-    vp_size = GObject.property(type=GObject.TYPE_PYOBJECT, flags=GObject.PARAM_READWRITE)
-    pad = GObject.property(type=GObject.TYPE_PYOBJECT, flags=GObject.PARAM_READWRITE)
-    tree = GObject.property(type=GObject.TYPE_PYOBJECT, flags=GObject.PARAM_READWRITE)
-    can_save = GObject.property(type=bool, default=False, flags=GObject.PARAM_READWRITE)
-
-    __gsignals__ = {'append-roi': (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,str)),
-                    'remove-roi': (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,))}
-
-    def __init__(self, *args, **kwargs):
+    def __init__(self, app, *args, **kwargs):
         Gtk.DrawingArea.__init__(self, *args, **kwargs)
 
+        self.app = app
+
+        self.current_im = None
         self.current_pb = None
         self.current_surface = None
-        self.current_areas = []
         self.current_center = None
         self.current_lt = None
 
@@ -39,7 +29,6 @@ class Drawer(Gtk.DrawingArea):
         self.win_size = self.vp_size + self.pad * 2
 
         self.set_size_request(self.win_size.x, self.win_size.y)
-        self.connect('draw', self.draw)
         self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.add_events(Gdk.EventMask.BUTTON_MOTION_MASK)
         self.add_events(Gdk.EventMask.BUTTON_RELEASE_MASK)
@@ -50,6 +39,10 @@ class Drawer(Gtk.DrawingArea):
         self.connect('button-release-event', self.button_release)
         self.connect('enter-notify-event', lambda w, e: self.change_cursor(True))
         self.connect('leave-notify-event', lambda w, e: self.change_cursor(False))
+        self.connect('draw', self.draw)
+        self.app.connect('notify::zoom', lambda w, _: self.set_zoom(w.zoom))
+        self.app.connect('notify::current-im-node', lambda w, _: self.set_image(w.current_im_node))
+        self.app.connect('change-areas', lambda _, change: self.queue_draw())
 
     def draw(self, _, ctx):
         if self.current_surface:
@@ -60,8 +53,9 @@ class Drawer(Gtk.DrawingArea):
 
         ctx.set_source_rgb(1, 0, 0)
         ctx.set_line_width(1)
-        for area in self.current_areas:
-            self.draw_roi(ctx, area.data['lt'], area.data['rb'])
+        if self.app.current_im_node is not None:
+            for area in self.app.current_im_node.children:
+                self.draw_roi(ctx, area.lt, area.rb)
         if self.draw_area:
             self.draw_roi(ctx, self.draw_area[0], self.draw_area[1])
 
@@ -76,7 +70,7 @@ class Drawer(Gtk.DrawingArea):
         ctx.rectangle(a0.x, a0.y, a1.x, a1.y)
         ctx.stroke()
 
-    def add_area(self, mouse):
+    def add_tmp_area(self, mouse):
         if mouse.x > self.pb_size.x:
             mouse.x = self.pb_size.x
         if mouse.y > self.pb_size.y:
@@ -98,29 +92,20 @@ class Drawer(Gtk.DrawingArea):
     def move(self, mouse):
         if self.last_mouse is None:
             self.last_mouse = mouse
-        self.current_center += (self.last_mouse - mouse) * self.zoom
+        self.current_center += (self.last_mouse - mouse) * self.app.zoom
         self.calc_correct_lt()
         self.last_mouse = mouse
         self.queue_draw()
 
-    def set_state(self, val):
-        self.state = val
-
     def set_image(self, tree):
-        self.tree = tree
-        if self.current_im == self.tree.data['full_path']:
-            self.set_zoom(None)
-            self.current_areas = [area for area in tree.children if area.data['type'] == Constants.ROI]
-            self.queue_draw()
+        if self.current_im == tree.path:
             return
-        self.current_im = self.tree.data['full_path']
-        self.current_pb = GdkPixbuf.Pixbuf.new_from_file(self.current_im)
+        self.current_im = tree.path
+        self.current_pb = GdkPixbuf.Pixbuf.new_from_file(tree.path)
         self.pb_size = Vec2D(self.current_pb.get_width(), self.current_pb.get_height())
-        self.tree.data['size'] = self.pb_size
+        tree.size = self.pb_size
         self.set_zoom(None)
-        self.current_areas = [area for area in tree.children if area.data['type'] == Constants.ROI]
-        self.can_save = any([area.data['changed'] for area in self.current_areas])
-        self.queue_draw()
+        self.app.can_save = tree.changed
 
     def calc_correct_lt(self):
         lt_check = self.current_center - self.visible_pb_area / 2
@@ -134,7 +119,7 @@ class Drawer(Gtk.DrawingArea):
         if rb_check.y > self.pb_size.y:
             self.current_center.y = (self.pb_size - self.visible_pb_area / 2).y
 
-        self.current_lt = -(self.transform_vp_to_pb(Vec2D(0, 0)) / self.zoom) + self.pad
+        self.current_lt = -(self.transform_vp_to_pb(Vec2D(0, 0)) / self.app.zoom) + self.pad
 
     def transform_vp_to_pb(self, vec):
         return vec * (self.visible_pb_area / self.vp_size) + (self.current_center - self.visible_pb_area / 2)
@@ -162,61 +147,54 @@ class Drawer(Gtk.DrawingArea):
         self.visible_pb_area = self.vp_size * zoom
         if self.current_im:
             self.calc_correct_lt()
-        self.zoom = zoom
-
+        if zoom is not self.app.zoom:
+            self.app.zoom = zoom
         self.queue_draw()
-        return zoom
 
     def button_press(self, _, event):
-        if self.state == Constants.STATE_REMOVE and event.type == Gdk.EventType.BUTTON_PRESS and event.button == Constants.LEFT_BUTTON:
+        if self.app.state == Constants.STATE_REMOVE and event.type == Gdk.EventType.BUTTON_PRESS and event.button == Constants.LEFT_BUTTON:
             mouse = self.transform_vp_to_pb(Vec2D(event.x, event.y) - self.pad)
 
-            all_areas = self.current_areas
-            self.current_areas = [area for area in self.current_areas if not (area.data['lt'] <= mouse <= area.data['rb'])]
+            all_rois = self.app.current_im_node.children
+            n_rois = [roi for roi in all_rois if not (roi.lt <= mouse <= roi.rb)]
 
-            rm = list(set(all_areas) - set(self.current_areas))
+            rm = list(set(all_rois) - set(n_rois))
             for rm_roi in rm:
-                self.emit('remove-roi', rm_roi)
+                self.app.emit('remove-roi', rm_roi)
 
             if len(rm):
-                rm_list = [area.data['lt'] for area in rm] + [area.data['rb'] for area in rm]
+                rm_list = [roi.lt for roi in rm] + [roi.rb for roi in rm]
                 min_vec = self.transform_pb_to_vp(Vec2D.allmin(*rm_list))
                 max_vec = self.transform_pb_to_vp(Vec2D.allmax(*rm_list)) - min_vec + self.pad * 2
 
                 self.queue_draw_area(min_vec.x, min_vec.y, max_vec.x, max_vec.y)
-            self.can_save = True
 
     def button_motion(self, _, event):
-        if self.current_im:
-            if self.state == Constants.STATE_MOVE:
+        if self.app.current_im_node:
+            mouse = Vec2D(event.x, event.y)
+            if self.app.state == Constants.STATE_MOVE:
                 if event.type == Gdk.EventType.MOTION_NOTIFY and event.state & Gdk.ModifierType.BUTTON1_MASK:
-                    mouse = Vec2D(event.x, event.y)
                     self.move(mouse)
-            if self.state == Constants.STATE_ADD:
+            if self.app.state == Constants.STATE_ADD:
                 if event.type == Gdk.EventType.MOTION_NOTIFY and event.state & Gdk.ModifierType.BUTTON1_MASK:
-                    self.add_area(self.transform_vp_to_pb(Vec2D(event.x, event.y) - self.pad))
+                    self.add_tmp_area(self.transform_vp_to_pb(mouse - self.pad))
 
     def button_release(self, _, event):
         if event.type == Gdk.EventType.BUTTON_RELEASE and event.state & Gdk.ModifierType.BUTTON1_MASK:
             self.last_mouse = None
-            if self.state == Constants.STATE_ADD:
+            if self.app.state == Constants.STATE_ADD:
                 rb_vec = Vec2D.allmax(*self.draw_area)
                 lt_vec = Vec2D.allmin(*self.draw_area)
-                self.emit('append-roi', self.tree, str(lt_vec) + ',' + str(rb_vec) +',' + Constants.DEFAULT_ANNOTATION)
+                self.app.emit('append-roi', str(lt_vec) + ',' + str(rb_vec) + ',' + Constants.DEFAULT_ANNOTATION)
                 self.draw_area = None
-                self.can_save = True
 
     def change_cursor(self, enter):
         cursor = None
         if enter:
-            if self.state == Constants.STATE_MOVE:
+            if self.app.state == Constants.STATE_MOVE:
                 cursor = Constants.CURSOR_MOVE
-            if self.state == Constants.STATE_ADD:
+            if self.app.state == Constants.STATE_ADD:
                 cursor = Constants.CURSOR_DRAW
-            if self.state == Constants.STATE_REMOVE:
+            if self.app.state == Constants.STATE_REMOVE:
                 cursor = Constants.CURSOR_DELETE
         self.get_window().set_cursor(cursor)
-
-    def update_areas(self):
-        self.current_areas = [area for area in self.tree.children if area.data['type'] == Constants.ROI]
-        self.queue_draw()
