@@ -12,9 +12,23 @@ class GuiToolbar(Gtk.Toolbar):
 
         self.app = app
 
+        self.setup_dialogs()
         self.setup_stateop()
         self.setup_scaleop()
         self.setup_fileop()
+
+    def setup_dialogs(self):
+        help_button = Gtk.ToolButton.new(Constants.HELP_DIALOG_ICON, None)
+        help_button.connect('clicked', lambda _: self.app.emit('help-dialog', True))
+        help_button.set_tooltip_text('Help')
+
+        about_button = Gtk.ToolButton.new(Constants.ABOUT_DIALOG_ICON, None)
+        about_button.connect('clicked', lambda _: self.app.emit('about-dialog', True))
+        about_button.set_tooltip_text('About')
+
+        self.insert(help_button, 0)
+        self.insert(about_button, 0)
+        self.insert(Gtk.SeparatorToolItem.new(), 0)
 
     def setup_stateop(self):
 

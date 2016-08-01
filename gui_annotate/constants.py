@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from gi.repository import Gdk, GObject, Gtk
+
 from gui_annotate.vec import Vec2D
 
 
@@ -45,6 +46,8 @@ class Constants:
     SAVE_ALL_ICON = Gtk.Image.new_from_icon_name('gtk-save-as', Gtk.IconSize.LARGE_TOOLBAR)
     PREV_ICON = Gtk.Image.new_from_icon_name('go-previous', Gtk.IconSize.LARGE_TOOLBAR)
     NEXT_ICON = Gtk.Image.new_from_icon_name('go-next', Gtk.IconSize.LARGE_TOOLBAR)
+    ABOUT_DIALOG_ICON = Gtk.Image.new_from_stock('gtk-info', Gtk.IconSize.LARGE_TOOLBAR)
+    HELP_DIALOG_ICON = Gtk.Image.new_from_stock('gtk-dialog-question', Gtk.IconSize.LARGE_TOOLBAR)
 
     DEFAULT_TEXT_COLOR = Gdk.RGBA(0,0,0,0)
     UNSAVED_TEXT_COLOR = Gdk.RGBA(1,0,0,0)
@@ -59,3 +62,45 @@ class Constants:
     ROI_RBY = 4
 
     ROI_POINTS = [ROI_LTX, ROI_LTY, ROI_RBX, ROI_RBY]
+
+    QUIT_DIALOG_TEXT = "Are you sure you want to quit? You still have some unsaved work."
+    QUIT_DIALOG_TYPE = Gtk.MessageType.WARNING
+
+    WEBSITE = "https://github.com/svobodat/gui4annotate"
+    AUTHORS = ["Otakar Jašek - jasek.ota@gmail.com", None]
+    PROG_NAME = "Gui4Annotate"
+    COMMENTS = "Simple GUI tool for easy annotation of data"
+    COPYRIGHT = "© Otakar Jašek, 2016"
+
+    HELP_DIALOG_MSG = "Help and Keyboard shortcuts for " + PROG_NAME
+    HELP_DIALOG_SECONDARY = """Workflow: Load a folder with images, add, modify or delete annotations and save them
+
+<b>Toolbar buttons:</b>
+    Load folder
+    Save current image
+    Save all annotations
+    Previous image
+    Next image
+    Scale buttons plus scale
+    Image manipulation modes
+    About
+    Help
+
+<b>Keyboard shortcuts</b>
+    <b>s</b> - Save current image
+    <b>Ctrl + s</b> - Save all annotations
+    <b>&#8592;</b> - Previous image
+    <b>&#8594;</b> - Next image
+    <b>&#8593;</b> - Previous annotation for image
+    <b>&#8595;</b> - Next annotation for image
+    <b>+</b> - Zoom in
+    <b>-</b> - Zoom out
+    <b>m</b> - Mode MOVE
+    <b>d</b> - Mode DRAW
+    <b>r</b> - Mode REMOVE
+    <b>a</b> - Create new default annotation for image
+    <b>c</b> - Edit annotation
+    <b>Tab</b> - Next field in editing mode
+    <b>Ctrl + Tab</b> - Previous field in editing mode
+
+More extensive guide can be found at https://github.com/svobodat/gui4annotate/blob/master/USAGE.md"""

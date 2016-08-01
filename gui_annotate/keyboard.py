@@ -57,8 +57,11 @@ class Keyboard:
                 self.delete()
             return True
         else:
-            if keyname == 'Tab':
-                self.next_edit()
+            if keyname == 'Tab' and ctrl:
+                self.change_edit(-1)
+                return True
+            if keyname == 'Tab' and not ctrl:
+                self.change_edit(1)
                 return True
 
     def go_vertical(self, up):
@@ -88,7 +91,6 @@ class Keyboard:
                 if len(focus_node.parent.children) == index + 1:
                     return
                 self.folder_view.set_focused_node(focus_node.parent.children[index+1])
-
 
     def try_zoom(self, zoom_in):
         zoom = self.app.zoom
@@ -132,9 +134,9 @@ class Keyboard:
             child_path = self.folder_view.storage.get_path(focus_node.children[0].storage_handle)
             self.folder_view.set_cursor_on_cell(child_path, column, None, True)
 
-    def next_edit(self):
+    def change_edit(self, change):
         path = self.editing_row
-        column = self.folder_view.get_column(self.editing_col + 1)
+        column = self.folder_view.get_column(self.editing_col + change)
         self.editable.editing_done()
         if column is not None:
             self.folder_view.set_cursor_on_cell(path, column, None, True)

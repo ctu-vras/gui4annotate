@@ -2,6 +2,7 @@
 
 from gi.repository import Gtk, GObject, Gdk
 
+import gui_annotate.dialogs as dialogs
 from gui_annotate.constants import Constants
 from gui_annotate.drawer import Drawer
 from gui_annotate.keyboard import Keyboard
@@ -26,13 +27,17 @@ class Gui4Annotate(Gtk.Window):
                     'remove-roi': (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
                     'prev-im': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
                     'next-im': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
-                    'set-editing': (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT))
+                    'set-editing': (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT)),
+                    'help-dialog': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
+                    'about-dialog': (GObject.SIGNAL_RUN_FIRST, None, (bool,))
                     }
 
     def __init__(self):
         Gtk.Window.__init__(self, title='Gui for annotation')
-        self.connect('delete-event', Gtk.main_quit)
+        self.connect('delete-event', self.quit)
         self.connect('realize', self.setup)
+        self.connect('help-dialog', lambda w, e: dialogs.help_dialog(self))
+        self.connect('about-dialog', lambda w, e: dialogs.about_dialog(self))
 
         self.keyboard = None
         self.grid = Gtk.Grid()
@@ -40,7 +45,6 @@ class Gui4Annotate(Gtk.Window):
         self.toolbar = GuiToolbar(self)
         self.area = Drawer(self)
         self.folder_view = FolderScrolledView(self)
-
         self.grid.attach(self.toolbar, 0,0,2,1)
         self.grid.attach(self.area, 1,1,1,1)
         self.grid.attach(self.folder_view, 0,1,1,1)
@@ -57,6 +61,20 @@ class Gui4Annotate(Gtk.Window):
         Constants.CURSOR_DRAW = Gdk.Cursor.new_for_display(display, Gdk.CursorType.CROSSHAIR)
         Constants.CURSOR_MOVE = Gdk.Cursor.new_for_display(display, Gdk.CursorType.FLEUR)
         self.keyboard = Keyboard(app)
+
+    def quit(self, w, e):
+        if not self.can_save_all:
+            Gtk.main_quit(w, e)
+            return False
+        dialog = Gtk.MessageDialog(parent=self, type=Constants.QUIT_DIALOG_TYPE, buttons=Gtk.ButtonsType.YES_NO, message_format=Constants.QUIT_DIALOG_TEXT)
+        response = dialog.run()
+        if response == Gtk.ResponseType.YES:
+            dialog.destroy()
+            Gtk.main_quit(w, e)
+            return False
+        else:
+            dialog.destroy()
+            return True
 
 
 if __name__ == '__main__':
