@@ -45,9 +45,11 @@ The left area is for navigation through folders and right area is for viewing th
 
 When you choose a folder to load by Folder chooser button, a new directory structure will apper in left area. The directory structure contains all its subfolders, however, only image files are present as files. For each image for which there was found corresponding annotation file, the image is populated with all annotation data saved on computer. The bold number next to image filename is number of annotations.
 
-Each annotation includes name of class (default name is 'Default bug') and 4 points denoting left-top and right-bottom corners of annotation
+Each annotation includes name of class (default name is 'Blyskacek') and 4 points denoting left-top and right-bottom corners of annotation
 
 Left (right) button will select previous (next) image across folders
+
+You can have multiple folders loaded inside a program.
 
 ## Image frame <a name="#image"></a>
 
@@ -105,7 +107,7 @@ None of the keyboard shortcuts work while editing values of annotations manually
 + <kbd>m</kbd>
   + Moving mode
 + <kbd>d</kbd>
-  + Adding mode (**d**raw)
+  + Drawing mode
 + <kbd>r</kbd>
   + Removing mode
 + <kbd>a</kbd>
@@ -114,7 +116,7 @@ None of the keyboard shortcuts work while editing values of annotations manually
   + If the current selection in folder view is annotation, deletes this annotation
   + If the current selection in folder view is image file, deletes **ALL** annotations for this image file
 + <kbd>c</kbd>
-  + If the current selection in folder view is annotation, enters edit mode for annotation's class, using <kbd>Tab</kbd> you can rotate through all fields of annotation
+  + If the current selection in folder view is annotation, enters edit mode for annotation's class, using <kbd>Tab</kbd>/<kbd>Shift</kbd> + <kbd>Tab</kbd> you can rotate through all fields of annotation
   + If the current selection in folder view is image file, enters edit mode for first annotation of this image
 
 
