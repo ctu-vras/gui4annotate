@@ -45,9 +45,12 @@ class SimpleTreeNode:
         if self.parent is not None and not self.parent.any_unsaved():
             self.parent.set_saved(storage)
 
-    @abstractmethod
     def save(self, storage):
-        pass
+        if self.changed:
+            for child in self.children:
+                if child.changed:
+                    child.save(storage)
+            self.set_saved(storage)
 
     @abstractmethod
     def insert_to_storage(self, storage):
@@ -124,7 +127,8 @@ class ImageNode(SimpleTreeNode):
         if os.path.isfile(txt_file):
             with open(txt_file, mode='r') as f:
                 for line in f.readlines():
-                    ROINode.create_tree(storage, node, line.strip())
+                    if line.count(',') is 4:
+                        ROINode.create_tree(storage, node, line.strip())
         return node
 
     def __init__(self, full_path, storage, parent):
@@ -134,6 +138,7 @@ class ImageNode(SimpleTreeNode):
         self.path = full_path
         self.rois = 0
         self.size = None
+        self.pb = None
         self.insert_to_storage(storage)
 
     def insert_to_storage(self, storage):
@@ -190,9 +195,6 @@ class ROINode(SimpleTreeNode):
         data = (self, True, Constants.DEFAULT_TEXT_COLOR, Constants.ROI_ICON, self.cls,
                 '%.1f' % self.lt.x, '%.1f' % self.lt.y, '%.1f' % self.rb.x, '%.1f' % self.rb.y)
         self.storage_handle = storage.append(self.parent.storage_handle, data)
-
-    def save(self, storage):
-        pass
 
     def delete_node(self, storage):
         storage.remove(self.storage_handle)
@@ -285,8 +287,7 @@ class TreeStorage(Gtk.TreeStore):
 
     def save_handler(self, save_all):
         if save_all:
-            for child in self.tree_node.children:
-                child.save(self)
+            self.tree_node.save(self)
             self.app.can_save_all = False
         else:
             self.app.current_im_node.save(self)

@@ -18,13 +18,13 @@ class Keyboard:
 
     def key_handler(self, _, event):
         keyname = Gdk.keyval_name(event.keyval)
-        ctrl = event.state & Gdk.ModifierType.CONTROL_MASK
-        shift = event.state & Gdk.ModifierType.SHIFT_MASK
+        ctrl = bool(event.state & Gdk.ModifierType.CONTROL_MASK)
+        shift = bool(event.state & Gdk.ModifierType.SHIFT_MASK)
 
         if self.editing_row is None:
-            if ctrl and keyname == 's' and self.app.can_save:
+            if ctrl and keyname == 's' and self.app.can_save and not shift:
                 self.app.emit('save', False)
-            if ctrl and shift and keyname == 's' and self.app.can_save_all:
+            if ctrl and shift and keyname == 'S' and self.app.can_save_all:
                 self.app.emit('save', True)
 
             if keyname == 'Left' and self.app.can_prev:
@@ -57,10 +57,10 @@ class Keyboard:
                 self.delete()
             return True
         else:
-            if keyname == 'Tab' and ctrl:
+            if keyname == 'ISO_Left_Tab':
                 self.change_edit(-1)
                 return True
-            if keyname == 'Tab' and not ctrl:
+            if keyname == 'Tab':
                 self.change_edit(1)
                 return True
 

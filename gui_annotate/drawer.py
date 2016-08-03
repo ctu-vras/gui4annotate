@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-from gi.repository import Gtk, Gdk, GdkPixbuf, GObject
-from gui_annotate.vec import Vec2D
+from gi.repository import Gtk, Gdk, GdkPixbuf
+
 from gui_annotate.constants import Constants
+from gui_annotate.vec import Vec2D
 
 
 class Drawer(Gtk.DrawingArea):
@@ -104,9 +105,14 @@ class Drawer(Gtk.DrawingArea):
         if self.current_im == tree.path:
             return
         self.current_im = tree.path
-        self.current_pb = GdkPixbuf.Pixbuf.new_from_file(tree.path)
-        self.pb_size = Vec2D(self.current_pb.get_width(), self.current_pb.get_height())
-        tree.size = self.pb_size
+        if tree.pb is not None:
+            self.current_pb = tree.pb
+            self.pb_size = tree.size
+        else:
+            self.current_pb = GdkPixbuf.Pixbuf.new_from_file(tree.path)
+            self.pb_size = Vec2D(self.current_pb.get_width(), self.current_pb.get_height())
+            tree.size = self.pb_size
+            tree.pb = self.current_pb
         self.set_zoom(None)
         self.app.can_save = tree.changed
 

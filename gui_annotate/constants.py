@@ -28,7 +28,7 @@ class Constants:
     CURSOR_DELETE = None
 
     IMAGE_EXT = ['.png', '.jpg', '.jpeg', '.bmp']
-    DEFAULT_ANNOTATION = 'Default bug'
+    DEFAULT_ANNOTATION = 'Blyskacek'
 
     FILE = 0
     FILE_ICON = 'image-x-generic'
@@ -83,12 +83,12 @@ class Constants:
     Next image
     Scale buttons plus scale
     Image manipulation modes
-    About
     Help
+    About
 
 <b>Keyboard shortcuts</b>
-    <b>s</b> - Save current image
-    <b>Ctrl + s</b> - Save all annotations
+    <b>Ctrl + s</b> - Save current image
+    <b>Ctrl + Shift + s</b> - Save all annotations
     <b>&#8592;</b> - Previous image
     <b>&#8594;</b> - Next image
     <b>&#8593;</b> - Previous annotation for image
@@ -100,6 +100,7 @@ class Constants:
     <b>r</b> - Mode REMOVE
     <b>a</b> - Create new default annotation for image
     <b>c</b> - Edit annotation
+    <b>Del</b> - Delete annotation
     <b>Tab</b> - Next field in editing mode
     <b>Ctrl + Tab</b> - Previous field in editing mode
 
