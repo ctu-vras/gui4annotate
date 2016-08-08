@@ -8,7 +8,7 @@ from gui_annotate.vec import Vec2D
 class Constants:
     ZOOM_STEP = 1
     MIN_ZOOM = 1
-    MAX_ZOOM = 5
+    INIT_MAX_ZOOM = 5
     INIT_ZOOM = 5
 
     INIT_SIZE = Vec2D(800, 600)

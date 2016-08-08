@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import math
 
 from gi.repository import Gtk, Gdk, GdkPixbuf
 
@@ -24,6 +25,9 @@ class Drawer(Gtk.DrawingArea):
         self.last_mouse = None
         self.draw_area = None
 
+        self.min_zoom = Constants.MIN_ZOOM
+        self.max_zoom = Constants.INIT_MAX_ZOOM
+
         self.vp_size = Constants.INIT_SIZE
         self.pad = Constants.PADDING
 
@@ -47,6 +51,7 @@ class Drawer(Gtk.DrawingArea):
         self.app.connect('notify::state', lambda w, _: self.change_cursor(self.over))
         self.app.connect('change-areas', lambda _, change: self.queue_draw())
         self.app.connect('remove-roi', self.removed_roi)
+        self.app.connect('draw-change-size', lambda _, width, height: self.change_size(width, height))
 
     def draw(self, _, ctx):
         if self.current_surface:
@@ -96,6 +101,8 @@ class Drawer(Gtk.DrawingArea):
     def move(self, mouse):
         if self.last_mouse is None:
             self.last_mouse = mouse
+        if self.current_center - self.visible_pb_area/2 < 0:
+            return
         self.current_center += (self.last_mouse - mouse) * self.app.zoom
         self.calc_correct_lt()
         self.last_mouse = mouse
@@ -116,17 +123,18 @@ class Drawer(Gtk.DrawingArea):
         self.set_zoom(None)
         self.app.can_save = tree.changed
 
-    def calc_correct_lt(self):
+    def calc_correct_lt(self, check=True):
         lt_check = self.current_center - self.visible_pb_area / 2
         rb_check = self.current_center + self.visible_pb_area / 2
-        if lt_check.x < 0:
-            self.current_center.x = self.visible_pb_area.x / 2
-        if lt_check.y < 0:
-            self.current_center.y = self.visible_pb_area.y / 2
-        if rb_check.x > self.pb_size.x:
-            self.current_center.x = (self.pb_size - self.visible_pb_area / 2).x
-        if rb_check.y > self.pb_size.y:
-            self.current_center.y = (self.pb_size - self.visible_pb_area / 2).y
+        if check:
+            if lt_check.x < 0:
+                self.current_center.x = self.visible_pb_area.x / 2
+            if lt_check.y < 0:
+                self.current_center.y = self.visible_pb_area.y / 2
+            if rb_check.x > self.pb_size.x:
+                self.current_center.x = (self.pb_size - self.visible_pb_area / 2).x
+            if rb_check.y > self.pb_size.y:
+                self.current_center.y = (self.pb_size - self.visible_pb_area / 2).y
 
         self.current_lt = -(self.transform_vp_to_pb(Vec2D(0, 0)) / self.app.zoom) + self.pad
 
@@ -138,15 +146,17 @@ class Drawer(Gtk.DrawingArea):
 
     def set_zoom(self, zoom):
         if zoom is None:
-            zoom = Constants.INIT_ZOOM
             self.current_center = self.pb_size / 2
-            self.visible_pb_area = self.pb_size
+            ratio = self.pb_size/self.vp_size
+            self.max_zoom = int(math.ceil(min(ratio.x, ratio.y)))
+            zoom = self.max_zoom
+            self.app.emit('change-zoom-range', self.min_zoom, self.max_zoom)
 
         if zoom <= Constants.MIN_ZOOM:
             zoom = Constants.MIN_ZOOM
 
-        elif zoom >= Constants.MAX_ZOOM:
-            zoom = Constants.MAX_ZOOM
+        elif zoom >= Constants.INIT_MAX_ZOOM:
+            zoom = Constants.INIT_MAX_ZOOM
 
         if self.current_pb:
             self.current_surface = Gdk.cairo_surface_create_from_pixbuf(self.current_pb, zoom, None)
@@ -155,7 +165,7 @@ class Drawer(Gtk.DrawingArea):
 
         self.visible_pb_area = self.vp_size * zoom
         if self.current_im:
-            self.calc_correct_lt()
+            self.calc_correct_lt(check=False)
         if zoom is not self.app.zoom:
             self.app.zoom = zoom
         self.queue_draw()
@@ -205,4 +215,13 @@ class Drawer(Gtk.DrawingArea):
                 cursor = Constants.CURSOR_DRAW
             if self.app.state == Constants.STATE_REMOVE:
                 cursor = Constants.CURSOR_DELETE
-        self.get_window().set_cursor(cursor)
+        win = self.get_window()
+        if win:
+            win.set_cursor(cursor)
+
+    def change_size(self, width, height):
+        self.set_size_request(width, height)
+        self.vp_size = Vec2D(width, height) - Constants.PADDING * 2
+        if self.current_pb:
+            self.set_zoom(None)
+

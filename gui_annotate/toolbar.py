@@ -17,6 +17,8 @@ class GuiToolbar(Gtk.Toolbar):
         self.setup_scaleop()
         self.setup_fileop()
 
+        self.app.connect('change-zoom-range', lambda w, min_zoom, max_zoom: self.change_scales(min_zoom, max_zoom))
+
     def setup_dialogs(self):
         about_button = Gtk.ToolButton.new(Constants.ABOUT_DIALOG_ICON, None)
         about_button.connect('clicked', lambda _: self.app.emit('about-dialog', True))
@@ -76,36 +78,43 @@ class GuiToolbar(Gtk.Toolbar):
         self.insert(Gtk.SeparatorToolItem.new(), 0)
 
     def setup_scaleop(self):
+
         zoom_out_button = Gtk.ToolButton.new(Constants.ZOOM_OUT_ICON, None)
-        zoom_out_button.connect('clicked', lambda _: self.app.set_property('zoom', self.app.zoom + Constants.ZOOM_STEP) if self.app.zoom + Constants.ZOOM_STEP <= Constants.MAX_ZOOM else None)
-        self.app.connect('notify::zoom', lambda w, _: zoom_out_button.set_sensitive(False) if w.zoom >= Constants.MAX_ZOOM else zoom_out_button.set_sensitive(True))
+        zoom_out_button.connect('clicked', lambda _: self.app.set_property('zoom', self.app.zoom + Constants.ZOOM_STEP) if self.app.zoom + Constants.ZOOM_STEP <= self.app.area.max_zoom else None)
+        self.app.connect('notify::zoom', lambda w, _: zoom_out_button.set_sensitive(False) if w.zoom >= self.app.area.max_zoom else zoom_out_button.set_sensitive(True))
         zoom_out_button.set_sensitive(False)
         zoom_out_button.set_tooltip_text('Zoom out')
 
-        scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, Constants.MIN_ZOOM, Constants.MAX_ZOOM, Constants.ZOOM_STEP)
-        scale.set_inverted(True)
-        scale.add_mark(1, Gtk.PositionType.TOP, None)
-        scale.add_mark(2, Gtk.PositionType.TOP, None)
-        scale.add_mark(3, Gtk.PositionType.TOP, None)
-        scale.add_mark(4, Gtk.PositionType.TOP, None)
-        scale.add_mark(5, Gtk.PositionType.TOP, None)
-        scale.set_size_request(150, 24)
-        scale.set_draw_value(False)
-        scale.set_value(Constants.INIT_ZOOM)
-        scale.connect('value-changed', lambda s: self.app.set_property('zoom', int(round(s.get_value()))))
-        self.app.connect('notify::zoom', lambda w, _: scale.set_value(w.zoom))
-        scale_button = Gtk.ToolItem.new()
-        scale_button.add(scale)
+        self.scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, self.app.area.min_zoom, self.app.area.max_zoom, Constants.ZOOM_STEP)
+        self.scale.set_inverted(True)
+        self.change_scales(Constants.MIN_ZOOM, Constants.INIT_MAX_ZOOM)
+        self.scale.set_size_request(150, 24)
+        self.scale.set_draw_value(False)
+        self.scale.set_value(Constants.INIT_ZOOM)
+        self.scale.connect('value-changed', lambda s: self.app.set_property('zoom', int(round(s.get_value()))))
+        self.app.connect('notify::zoom', lambda w, _: self.scale.set_value(w.zoom))
+        self.scale_button = Gtk.ToolItem.new()
+        self.scale_button.add(self.scale)
 
         zoom_in_button = Gtk.ToolButton.new(Constants.ZOOM_IN_ICON, None)
-        zoom_in_button.connect('clicked', lambda _: self.app.set_property('zoom', self.app.zoom - Constants.ZOOM_STEP) if self.app.zoom - Constants.ZOOM_STEP >= Constants.MIN_ZOOM else None)
-        self.app.connect('notify::zoom', lambda w, _: zoom_in_button.set_sensitive(False) if w.zoom <= Constants.MIN_ZOOM else zoom_in_button.set_sensitive(True))
+        zoom_in_button.connect('clicked', lambda _: self.app.set_property('zoom', self.app.zoom - Constants.ZOOM_STEP) if self.app.zoom - Constants.ZOOM_STEP >= self.app.area.min_zoom else None)
+        self.app.connect('notify::zoom', lambda w, _: zoom_in_button.set_sensitive(False) if w.zoom <= self.app.area.min_zoom else zoom_in_button.set_sensitive(True))
         zoom_in_button.set_tooltip_text('Zoom in')
 
         self.insert(zoom_in_button, 0)
-        self.insert(scale_button, 0)
+        self.insert(self.scale_button, 0)
         self.insert(zoom_out_button, 0)
         self.insert(Gtk.SeparatorToolItem.new(), 0)
+
+    def change_scales(self, min_zoom, max_zoom):
+        if self.scale.get_value() > max_zoom:
+            self.scale.set_value(max_zoom)
+        if self.scale.get_value() < min_zoom:
+            self.scale.set_value(min_zoom)
+        self.scale.set_range(min_zoom, max_zoom)
+        for i in range(min_zoom, max_zoom+1):
+            self.scale.add_mark(i, Gtk.PositionType.TOP, None)
+
 
     def setup_fileop(self):
         filechooser = Gtk.FileChooserButton.new("Please choose a folder", Gtk.FileChooserAction.SELECT_FOLDER)
