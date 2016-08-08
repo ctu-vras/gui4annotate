@@ -95,10 +95,10 @@ class Keyboard:
     def try_zoom(self, zoom_in):
         zoom = self.app.zoom
         if zoom_in:
-            if zoom - Constants.ZOOM_STEP >= Constants.MIN_ZOOM:
+            if zoom - Constants.ZOOM_STEP >= self.app.area.min_zoom:
                 self.app.zoom = zoom - Constants.ZOOM_STEP
         else:
-            if zoom + Constants.ZOOM_STEP <= Constants.MAX_ZOOM:
+            if zoom + Constants.ZOOM_STEP <= self.app.area.max_zoom:
                 self.app.zoom = zoom + Constants.ZOOM_STEP
 
     def delete(self):
