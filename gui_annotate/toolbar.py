@@ -20,6 +20,16 @@ class GuiToolbar(Gtk.Toolbar):
         self.app.connect('change-zoom-range', lambda w, min_zoom, max_zoom: self.change_scales(min_zoom, max_zoom))
 
     def setup_dialogs(self):
+        detect_button = Gtk.ToolButton.new(Constants.DETECT_ICON, None)
+        detect_button.connect('clicked', lambda _: self.app.emit('detect', True))
+        self.app.connect('notify::current-im-node', lambda w, _: detect_button.set_sensitive(w.current_im_node is not None))
+        detect_button.set_sensitive(False)
+        detect_button.set_tooltip_text('Detect')
+
+        detector_set = Gtk.ToolButton.new(Constants.DETECTOR_SETTINGS_ICON, None)
+        detector_set.connect('clicked', lambda _: self.app.emit('detect-settings', True))
+        detector_set.set_tooltip_text('Detector settings')
+
         about_button = Gtk.ToolButton.new(Constants.ABOUT_DIALOG_ICON, None)
         about_button.connect('clicked', lambda _: self.app.emit('about-dialog', True))
         about_button.set_tooltip_text('About')
@@ -30,6 +40,9 @@ class GuiToolbar(Gtk.Toolbar):
 
         self.insert(about_button, 0)
         self.insert(help_button, 0)
+        self.insert(Gtk.SeparatorToolItem.new(), 0)
+        self.insert(detect_button, 0)
+        self.insert(detector_set, 0)
         self.insert(Gtk.SeparatorToolItem.new(), 0)
 
     def setup_stateop(self):

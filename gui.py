@@ -4,6 +4,7 @@ from gi.repository import Gtk, GObject, Gdk
 
 import gui_annotate.dialogs as dialogs
 from gui_annotate.constants import Constants
+from gui_annotate.detector import Detector
 from gui_annotate.drawer import Drawer
 from gui_annotate.keyboard import Keyboard
 from gui_annotate.toolbar import GuiToolbar
@@ -31,7 +32,9 @@ class Gui4Annotate(Gtk.Window):
                     'help-dialog': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
                     'about-dialog': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
                     'draw-change-size': (GObject.SIGNAL_RUN_FIRST, None, (int, int)),
-                    'change-zoom-range': (GObject.SIGNAL_RUN_FIRST, None, (int, int))
+                    'change-zoom-range': (GObject.SIGNAL_RUN_FIRST, None, (int, int)),
+                    'detect-settings': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
+                    'detect': (GObject.SIGNAL_RUN_FIRST, None, (bool,))
                     }
 
     def __init__(self):
@@ -48,6 +51,7 @@ class Gui4Annotate(Gtk.Window):
         self.height = 0
 
         self.area = Drawer(self)
+        self.detector = Detector(self)
         self.toolbar = GuiToolbar(self)
         self.folder_view = FolderScrolledView(self)
         self.grid.attach(self.toolbar, 0,0,2,1)
@@ -55,7 +59,7 @@ class Gui4Annotate(Gtk.Window):
         self.grid.attach(self.folder_view, 0,1,1,1)
         self.add(self.grid)
 
-    def setup(self, window):
+    def setup(self, _):
         display = Gdk.Display.get_default()
         try:
             Constants.CURSOR_DELETE = Gdk.Cursor.new_from_name(display, 'not-allowed')
@@ -63,9 +67,9 @@ class Gui4Annotate(Gtk.Window):
             Constants.CURSOR_DELETE = Gdk.Cursor.new_for_display(display, Gdk.CursorType.X_CURSOR)
         Constants.CURSOR_DRAW = Gdk.Cursor.new_for_display(display, Gdk.CursorType.CROSSHAIR)
         Constants.CURSOR_MOVE = Gdk.Cursor.new_for_display(display, Gdk.CursorType.FLEUR)
-        self.keyboard = Keyboard(app)
+        self.keyboard = Keyboard(self)
 
-    def allocate(self, widget, allocation):
+    def allocate(self, _, allocation):
         change = False
         if allocation.width != self.width:
             self.width = allocation.width

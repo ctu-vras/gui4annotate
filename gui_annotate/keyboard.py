@@ -45,10 +45,17 @@ class Keyboard:
                 self.app.state = Constants.STATE_MOVE
             if keyname == 'r':
                 self.app.state = Constants.STATE_REMOVE
-            if keyname == 'd':
+            if keyname == 'a':
                 self.app.state = Constants.STATE_ADD
+            if keyname == 'h':
+                self.app.emit('help-dialog', True)
 
-            if keyname == 'a' and self.app.current_im_node is not None:
+            if keyname == 'd' and not ctrl and self.app.current_im_node is not None:
+                self.app.emit('detect', True)
+            if keyname == 'd' and ctrl:
+                self.app.emit('detect-settings', True)
+
+            if keyname == 'i' and self.app.current_im_node is not None:
                 self.app.emit('append-roi', ('0,' * 4) + Constants.DEFAULT_ANNOTATION)
             if keyname == 'c':
                 self.try_edit()

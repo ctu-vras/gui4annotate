@@ -60,12 +60,13 @@ class Drawer(Gtk.DrawingArea):
             ctx.set_source_rgb(1, 1, 1)
         ctx.paint()
 
-        ctx.set_source_rgb(1, 0, 0)
         ctx.set_line_width(1)
         if self.app.current_im_node is not None:
             for area in self.app.current_im_node.children:
+                ctx.set_source_rgb(*area.color)
                 self.draw_roi(ctx, area.lt, area.rb)
         if self.draw_area:
+            ctx.set_source_rgb(*Constants.SELECTED_ROI_COLOR)
             self.draw_roi(ctx, self.draw_area[0], self.draw_area[1])
 
         ctx.set_source_rgb(0, 0, 0)
@@ -90,6 +91,9 @@ class Drawer(Gtk.DrawingArea):
             mouse.y = 0
 
         if self.last_mouse is None:
+            for roi in self.app.current_im_node.children:
+                roi.color = Constants.UNSELECTED_ROI_COLOR
+            self.queue_draw()
             self.last_mouse = mouse
             self.draw_area = (self.last_mouse, mouse)
         prev = self.draw_area[1]
@@ -165,7 +169,11 @@ class Drawer(Gtk.DrawingArea):
 
         self.visible_pb_area = self.vp_size * zoom
         if self.current_im:
-            self.calc_correct_lt(check=False)
+            if zoom == self.max_zoom:
+                self.current_center = self.pb_size / 2
+                self.calc_correct_lt(check=False)
+            else:
+                self.calc_correct_lt()
         if zoom is not self.app.zoom:
             self.app.zoom = zoom
         self.queue_draw()
@@ -199,7 +207,7 @@ class Drawer(Gtk.DrawingArea):
     def button_release(self, _, event):
         if event.type == Gdk.EventType.BUTTON_RELEASE and event.state & Gdk.ModifierType.BUTTON1_MASK:
             self.last_mouse = None
-            if self.app.state == Constants.STATE_ADD:
+            if self.app.state == Constants.STATE_ADD and self.draw_area is not None:
                 rb_vec = Vec2D.allmax(*self.draw_area)
                 lt_vec = Vec2D.allmin(*self.draw_area)
                 self.app.emit('append-roi', str(lt_vec) + ',' + str(rb_vec) + ',' + Constants.DEFAULT_ANNOTATION)
@@ -224,4 +232,3 @@ class Drawer(Gtk.DrawingArea):
         self.vp_size = Vec2D(width, height) - Constants.PADDING * 2
         if self.current_pb:
             self.set_zoom(None)
-

@@ -6,6 +6,15 @@ from gui_annotate.vec import Vec2D
 
 
 class Constants:
+    INIT_MIN_AREA = 10
+    INIT_MAX_AREA = 100
+    INIT_RED = False
+    INIT_GREEN = True
+    INIT_BLUE = False
+
+    INIT_MIN_COLOR = [0, 0, 0]
+    INIT_MAX_COLOR = [255, 100, 255]
+
     ZOOM_STEP = 1
     MIN_ZOOM = 1
     INIT_MAX_ZOOM = 5
@@ -30,7 +39,7 @@ class Constants:
     IMAGE_EXT = ['.png', '.jpg', '.jpeg', '.bmp']
     DEFAULT_ANNOTATION = 'Blyskacek'
 
-    FILE = 0
+    IMAGE = 0
     FILE_ICON = 'image-x-generic'
     FOLDER = 1
     FOLDER_ICON = 'folder'
@@ -48,9 +57,14 @@ class Constants:
     NEXT_ICON = Gtk.Image.new_from_icon_name('go-next', Gtk.IconSize.LARGE_TOOLBAR)
     ABOUT_DIALOG_ICON = Gtk.Image.new_from_stock('gtk-info', Gtk.IconSize.LARGE_TOOLBAR)
     HELP_DIALOG_ICON = Gtk.Image.new_from_stock('gtk-dialog-question', Gtk.IconSize.LARGE_TOOLBAR)
+    DETECTOR_SETTINGS_ICON = Gtk.Image.new_from_stock('gtk-preferences', Gtk.IconSize.LARGE_TOOLBAR)
+    DETECT_ICON = Gtk.Image.new_from_stock('gtk-new', Gtk.IconSize.LARGE_TOOLBAR)
 
     DEFAULT_TEXT_COLOR = Gdk.RGBA(0,0,0,0)
     UNSAVED_TEXT_COLOR = Gdk.RGBA(1,0,0,0)
+
+    UNSELECTED_ROI_COLOR = (0, 0, 1)
+    SELECTED_ROI_COLOR = (1, 0, 0)
 
 #tree_inst, editable, color, icon_name, short_path/class_name, x-lt/#of ROIS, y-lt, x-rb, y-rb
     FOLDER_VIEW_ROW = (GObject.TYPE_PYOBJECT, bool, Gdk.RGBA, str, str, str, str, str, str)
@@ -83,6 +97,8 @@ class Constants:
     Next image
     Scale buttons plus scale
     Image manipulation modes
+    Detector settings
+    Detect
     Help
     About
 
@@ -96,10 +112,12 @@ class Constants:
     <b>+</b> - Zoom in
     <b>-</b> - Zoom out
     <b>m</b> - Mode MOVE
-    <b>d</b> - Mode DRAW
+    <b>a</b> - Mode ADD
     <b>r</b> - Mode REMOVE
-    <b>a</b> - Create new default annotation for image
+    <b>i</b> - Create new default annotation for image
     <b>c</b> - Edit annotation
+    <b>d</b> - Automatically detect ROIs
+    <b>Ctrl + d</b> - Detector settings
     <b>Del</b> - Delete annotation
     <b>Tab</b> - Next field in editing mode
     <b>Ctrl + Tab</b> - Previous field in editing mode

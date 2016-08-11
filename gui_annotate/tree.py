@@ -134,11 +134,13 @@ class ImageNode(SimpleTreeNode):
     def __init__(self, full_path, storage, parent):
         assert isinstance(parent, FolderNode)
         SimpleTreeNode.__init__(self, parent)
-        self.type = Constants.FILE
+        self.type = Constants.IMAGE
         self.path = full_path
         self.rois = 0
         self.size = None
         self.pb = None
+        self.pix_data = None
+        self.data = None
         self.insert_to_storage(storage)
 
     def insert_to_storage(self, storage):
@@ -161,6 +163,10 @@ class ImageNode(SimpleTreeNode):
             for child in self.children:
                 child.set_saved(storage)
 
+    def __contains__(self, item):
+        return item in [(child.lt, child.rb) for child in self.children]
+
+
 
 class ROINode(SimpleTreeNode):
 
@@ -179,6 +185,7 @@ class ROINode(SimpleTreeNode):
             self.cls = cls
             self.lt = lt
             self.rb = rb
+            self.color = Constants.UNSELECTED_ROI_COLOR
         else:
             data = roi_str.split(',')
             self.cls = data[-1]
@@ -202,8 +209,14 @@ class ROINode(SimpleTreeNode):
         self.parent.children.remove(self)
         storage.set_value(self.parent.storage_handle, 5, '<b>' + str(self.parent.rois) + '</b>')
         self.parent.set_changed(storage)
+        if not self.parent.any_unsaved():
+            self.parent.set_saved(storage)
+            storage.app.can_save = False
+            if not storage.tree_node.any_unsaved():
+                storage.app.can_save_all = False
         view = storage.app.folder_view.folder_view
         view.set_focused_node(self.parent)
+        del self
 
     def update_cls(self, cls, storage):
         if cls == self.cls:
@@ -369,12 +382,21 @@ class FolderView(Gtk.TreeView):
         self.app.can_prev = True if node.prev is not None else False
         self.app.can_next = True if node.next is not None else False
 
-        if node.type == Constants.FILE:
-            self.app.current_im_node = node
+        if node.type == Constants.IMAGE:
+            for roi in node.children:
+                roi.color = Constants.UNSELECTED_ROI_COLOR
+            if self.app.current_im_node is not node:
+                self.app.current_im_node = node
+            else:
+                self.app.area.queue_draw()
             self.expand_row(path, True)
 
         if node.type == Constants.ROI:
             self.app.current_im_node = node.parent
+            for roi in node.parent.children:
+                roi.color = Constants.UNSELECTED_ROI_COLOR
+            node.color = Constants.SELECTED_ROI_COLOR
+            self.app.area.queue_draw()
 
     def start_edit(self, cr, editable, path):
         self.app.keyboard.editable = editable

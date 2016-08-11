@@ -106,11 +106,17 @@ None of the keyboard shortcuts work while editing values of annotations manually
   + Zoom out
 + <kbd>m</kbd>
   + Moving mode
-+ <kbd>d</kbd>
-  + Drawing mode
++ <kbd>a</kbd>
+  + Drawing mode (Adding annotations)
 + <kbd>r</kbd>
   + Removing mode
-+ <kbd>a</kbd>
++ <kbd>d</kbd>
+  + Automatically detect ROIs
++ <kbd>ctrl</kbd> + <kbd>d</kbd>
+  + Detector settings
++ <kbd>h</kbd>
+  + Shows help
++ <kbd>i</kbd>
   + Creates new annotation in the current image with values `lt = rb = [0,0]` and annotation class is 'Default bug' to modify manually.
 + <kbd>Del</kbd>
   + If the current selection in folder view is annotation, deletes this annotation
