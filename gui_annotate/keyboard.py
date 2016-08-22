@@ -87,7 +87,7 @@ class Keyboard:
                 nnode = focus_node.parent.children[index-1]
             else:
                 nnode = focus_node.parent
-            self.folder_view.set_focused_node(nnode)
+            self.app.cur_roi = nnode
             return
         if not up:
             if isinstance(focus_node, ImageNode):
@@ -97,7 +97,7 @@ class Keyboard:
                 index = focus_node.parent.children.index(focus_node)
                 if len(focus_node.parent.children) == index + 1:
                     return
-                self.folder_view.set_focused_node(focus_node.parent.children[index+1])
+                self.app.cur_roi = focus_node.parent.children[index+1]
 
     def try_zoom(self, zoom_in):
         zoom = self.app.zoom

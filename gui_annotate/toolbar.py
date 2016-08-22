@@ -85,6 +85,17 @@ class GuiToolbar(Gtk.Toolbar):
         delete_item.add(delete_button)
         delete_item.set_tooltip_text('Mode REMOVING')
 
+        anno_button = Gtk.RadioButton.new_from_widget(move_button)
+        anno_button.state = Constants.STATE_ANNO
+        anno_button.add(Constants.ANNO_ICON)
+        anno_button.connect('toggled', lambda _: self.app.set_property('state', Constants.STATE_ANNO))
+        anno_button.set_property('draw-indicator', False)
+        self.app.connect('notify::state', lambda w, _: set_state(w.state, anno_button))
+        anno_item = Gtk.ToolItem.new()
+        anno_item.add(anno_button)
+        anno_item.set_tooltip_text('Mode CHANGING ANNOTATIONS')
+
+        self.insert(anno_item, 0)
         self.insert(delete_item, 0)
         self.insert(add_item, 0)
         self.insert(move_item, 0)

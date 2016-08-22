@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
+
 import math
+import operator
 
 from gi.repository import Gtk, Gdk, GdkPixbuf
 
 from gui_annotate.constants import Constants
+from gui_annotate.directions import DirEnum
 from gui_annotate.vec import Vec2D
 
 
@@ -24,6 +27,7 @@ class Drawer(Gtk.DrawingArea):
 
         self.last_mouse = None
         self.draw_area = None
+        self.direction = None
 
         self.min_zoom = Constants.MIN_ZOOM
         self.max_zoom = Constants.INIT_MAX_ZOOM
@@ -36,7 +40,7 @@ class Drawer(Gtk.DrawingArea):
 
         self.set_size_request(self.win_size.x, self.win_size.y)
         self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
-        self.add_events(Gdk.EventMask.BUTTON_MOTION_MASK)
+        self.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
         self.add_events(Gdk.EventMask.BUTTON_RELEASE_MASK)
         self.add_events(Gdk.EventMask.ENTER_NOTIFY_MASK)
         self.add_events(Gdk.EventMask.LEAVE_NOTIFY_MASK)
@@ -116,6 +120,7 @@ class Drawer(Gtk.DrawingArea):
         if self.current_im == tree.path:
             return
         self.current_im = tree.path
+        self.app.cur_roi = None
         if tree.pb is not None:
             self.current_pb = tree.pb
             self.pb_size = tree.size
@@ -200,9 +205,14 @@ class Drawer(Gtk.DrawingArea):
             if self.app.state == Constants.STATE_MOVE:
                 if event.type == Gdk.EventType.MOTION_NOTIFY and event.state & Gdk.ModifierType.BUTTON1_MASK:
                     self.move(mouse)
+            mouse = self.transform_vp_to_pb(mouse - self.pad)
             if self.app.state == Constants.STATE_ADD:
                 if event.type == Gdk.EventType.MOTION_NOTIFY and event.state & Gdk.ModifierType.BUTTON1_MASK:
-                    self.add_tmp_area(self.transform_vp_to_pb(mouse - self.pad))
+                    self.add_tmp_area(mouse)
+            if self.app.state == Constants.STATE_ANNO:
+                direction = self.anno_cursor(mouse)
+                if direction is not None and event.type == Gdk.EventType.MOTION_NOTIFY and event.state & Gdk.ModifierType.BUTTON1_MASK:
+                    self.move_anno_handler(mouse)
 
     def button_release(self, _, event):
         if event.type == Gdk.EventType.BUTTON_RELEASE and event.state & Gdk.ModifierType.BUTTON1_MASK:
@@ -232,3 +242,34 @@ class Drawer(Gtk.DrawingArea):
         self.vp_size = Vec2D(width, height) - Constants.PADDING * 2
         if self.current_pb:
             self.set_zoom(None)
+
+    def move_anno_handler(self, vec):
+        if self.last_mouse is None:
+            self.last_mouse = vec
+        self.direction.move_roi(vec, self.app.cur_roi)
+        self.queue_draw()
+        self.last_mouse = vec
+
+    def anno_cursor(self, vec):
+        if self.last_mouse is not None:
+            return self.direction
+        possible = []
+        win = self.get_window()
+        for child in self.app.current_im_node.children:
+            if ((child.rb + Constants.RESIZE_TOLERATION) - vec) > 0 and (vec - (child.lt - Constants.RESIZE_TOLERATION)) > 0:
+                tmp_mouse = (vec - child.lt) / (child.rb - child.lt)
+                for direction in DirEnum:
+                    if direction.value.inside_check(tmp_mouse):
+                        break
+                direction = direction.value
+                possible.append((child, direction, direction.get_dist(vec, child)))
+        if not len(possible):
+            win.set_cursor(None)
+            self.direction = None
+            return None
+        node, direction, _ = min(possible, key=operator.itemgetter(2))
+        win.set_cursor(direction.cursor)
+        self.direction = direction
+        if node is not self.app.cur_roi:
+            self.app.cur_roi = node
+        return direction

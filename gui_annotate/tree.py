@@ -167,7 +167,6 @@ class ImageNode(SimpleTreeNode):
         return item in [(child.lt, child.rb) for child in self.children]
 
 
-
 class ROINode(SimpleTreeNode):
 
     @staticmethod
@@ -181,11 +180,11 @@ class ROINode(SimpleTreeNode):
         self.type = Constants.ROI
         self.parent.rois += 1
         storage.set_value(self.parent.storage_handle, 5, '<b>' + str(self.parent.rois) + '</b>')
+        self.color = Constants.UNSELECTED_ROI_COLOR
         if roi_str is None:
             self.cls = cls
             self.lt = lt
             self.rb = rb
-            self.color = Constants.UNSELECTED_ROI_COLOR
         else:
             data = roi_str.split(',')
             self.cls = data[-1]
@@ -320,11 +319,14 @@ class FolderView(Gtk.TreeView):
         self.connect('row-activated', self.activated_row)
         self.app.connect('prev-im', lambda w, _: self.follow_im(True))
         self.app.connect('next-im', lambda w, _: self.follow_im(False))
+        self.app.connect('notify::cur-roi', lambda w, _: self.set_focused_node(w.cur_roi))
         self.set_property('activate-on-single-click', True)
         self.set_headers_visible(False)
         self.setup_columns()
 
     def set_focused_node(self, node):
+        if node is None:
+            return
         path = self.storage.get_path(node.storage_handle)
         self.expand_to_path(path)
         self.row_activated(path, self.get_column(0))
@@ -392,10 +394,10 @@ class FolderView(Gtk.TreeView):
             self.expand_row(path, True)
 
         if node.type == Constants.ROI:
-            self.app.current_im_node = node.parent
             for roi in node.parent.children:
                 roi.color = Constants.UNSELECTED_ROI_COLOR
             node.color = Constants.SELECTED_ROI_COLOR
+            self.app.current_im_node = node.parent
             self.app.area.queue_draw()
 
     def start_edit(self, cr, editable, path):

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import numbers
+import math
 
 
 class Vec2D:
@@ -29,7 +30,7 @@ class Vec2D:
         if isinstance(other, Vec2D):
             return Vec2D(self.x - other.x, self.y - other.y)
         if isinstance(other, numbers.Number):
-            return Vec2D(self.x * other, self.y * other)
+            return Vec2D(self.x - other, self.y - other)
         raise TypeError('Cannot substract vector with something else')
 
     def __truediv__(self, other):
@@ -87,18 +88,26 @@ class Vec2D:
         raise TypeError('Cannot compare vector with something else')
 
     def __ne__(self, other):
-        return self.__eq__(other)
+        return not self.__eq__(other)
 
     def __hash__(self):
         return hash(self.x) + hash(self.y)
 
     def __round__(self, n=None):
-        round(self.x, n)
-        round(self.y, n)
-        return self
+        return Vec2D(round(self.x, n), round(self.y, n))
+
+    def __abs__(self):
+        return Vec2D(abs(self.x), abs(self.y))
 
     def __str__(self):
         return '%.1f,%.1f' % (self.x, self.y)
+
+    @staticmethod
+    def dist(first, second):
+        if isinstance(first, Vec2D) and isinstance(second, Vec2D):
+            tmp = first - second
+            return math.sqrt((tmp.x ** 2) + (tmp.y ** 2))
+        raise TypeError('Cannot do distance if both are not Vec2D')
 
     @staticmethod
     def allmin(*args):

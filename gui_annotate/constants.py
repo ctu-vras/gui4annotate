@@ -29,12 +29,27 @@ class Constants:
     STATE_MOVE = 0
     STATE_ADD = 1
     STATE_REMOVE = 2
+    STATE_ANNO = 3
     
     DEFAULT_STATE = STATE_ADD
 
     CURSOR_MOVE = None
     CURSOR_DRAW = None
     CURSOR_DELETE = None
+    CURSOR_RESIZE = None
+
+    RESIZE_TOLERATION = 10
+    CORNER_PART = 0.25
+
+    TOP = 0
+    TOP_RIGHT = 1
+    RIGHT = 2
+    BOTTOM_RIGHT = 3
+    BOTTOM = 4
+    BOTTOM_LEFT = 5
+    LEFT = 6
+    TOP_LEFT = 7
+    CENTER = 8
 
     IMAGE_EXT = ['.png', '.jpg', '.jpeg', '.bmp']
     DEFAULT_ANNOTATION = 'Blyskacek'
@@ -50,7 +65,8 @@ class Constants:
     ZOOM_IN_ICON = Gtk.Image.new_from_icon_name('zoom-in', Gtk.IconSize.LARGE_TOOLBAR)
     DELETE_ICON = Gtk.Image.new_from_stock('gtk-delete', Gtk.IconSize.LARGE_TOOLBAR)
     ADD_ICON = Gtk.Image.new_from_stock('gtk-add', Gtk.IconSize.LARGE_TOOLBAR)
-    MOVE_ICON = Gtk.Image.new_from_stock('gtk-fullscreen', Gtk.IconSize.LARGE_TOOLBAR)
+    MOVE_ICON = Gtk.Image.new_from_icon_name('view-fullscreen', Gtk.IconSize.LARGE_TOOLBAR)
+    ANNO_ICON = Gtk.Image.new_from_stock('gtk-zoom-fit', Gtk.IconSize.LARGE_TOOLBAR)
     SAVE_ICON = Gtk.Image.new_from_icon_name('gtk-save', Gtk.IconSize.LARGE_TOOLBAR)
     SAVE_ALL_ICON = Gtk.Image.new_from_icon_name('gtk-save-as', Gtk.IconSize.LARGE_TOOLBAR)
     PREV_ICON = Gtk.Image.new_from_icon_name('go-previous', Gtk.IconSize.LARGE_TOOLBAR)

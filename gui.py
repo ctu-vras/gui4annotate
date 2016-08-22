@@ -5,6 +5,7 @@ from gi.repository import Gtk, GObject, Gdk
 import gui_annotate.dialogs as dialogs
 from gui_annotate.constants import Constants
 from gui_annotate.detector import Detector
+from gui_annotate.directions import DirEnum
 from gui_annotate.drawer import Drawer
 from gui_annotate.keyboard import Keyboard
 from gui_annotate.toolbar import GuiToolbar
@@ -14,6 +15,7 @@ from gui_annotate.tree import FolderScrolledView
 class Gui4Annotate(Gtk.Window):
 
     current_im_node = GObject.property(type=GObject.TYPE_PYOBJECT, flags=GObject.PARAM_READWRITE)
+    cur_roi = GObject.property(type=GObject.TYPE_PYOBJECT, flags=GObject.PARAM_READWRITE)
     zoom = GObject.property(type=int, default=Constants.INIT_ZOOM, flags=GObject.PARAM_READWRITE)
     can_save = GObject.property(type=bool, default=False, flags=GObject.PARAM_READWRITE)
     can_save_all = GObject.property(type=bool, default=False, flags=GObject.PARAM_READWRITE)
@@ -67,6 +69,9 @@ class Gui4Annotate(Gtk.Window):
             Constants.CURSOR_DELETE = Gdk.Cursor.new_for_display(display, Gdk.CursorType.X_CURSOR)
         Constants.CURSOR_DRAW = Gdk.Cursor.new_for_display(display, Gdk.CursorType.CROSSHAIR)
         Constants.CURSOR_MOVE = Gdk.Cursor.new_for_display(display, Gdk.CursorType.FLEUR)
+        for direction in DirEnum:
+            direction.value.set_cursor(Gdk.Cursor.new_for_display(display, direction.value.cursor_name))
+            direction.value.set_drawer(self.area)
         self.keyboard = Keyboard(self)
 
     def allocate(self, _, allocation):
